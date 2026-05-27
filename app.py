@@ -300,6 +300,25 @@ def student_cancel_order(order_id):
         conn.close()
 
 
+# ── GET /api/leaderboard ─────────────────────────────────────────────────────
+
+@app.route("/api/leaderboard", methods=["GET"])
+def leaderboard():
+    conn = get_db()
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                "SELECT name, eco_points FROM Student ORDER BY eco_points DESC LIMIT 5"
+            )
+            rows = cur.fetchall()
+        return jsonify(rows)
+    except Exception as e:
+        msg = e.args[1] if len(e.args) > 1 else str(e)
+        return jsonify({"error": msg}), 500
+    finally:
+        conn.close()
+
+
 # ── GET /api/boxes ───────────────────────────────────────────────────────────
 
 @app.route("/api/boxes", methods=["GET"])
@@ -329,6 +348,39 @@ def get_boxes():
             if row.get("pickUpDeadline") is not None:
                 row["pickUpDeadline"] = str(row["pickUpDeadline"])
         return jsonify(rows)
+    finally:
+        conn.close()
+
+
+# ── GET /api/vendor/analytics ────────────────────────────────────────────────
+
+@app.route("/api/vendor/analytics", methods=["GET"])
+def vendor_analytics():
+    store_id, err = login_required(role="store")
+    if err:
+        return err
+
+    conn = get_db()
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                """SELECT
+                       COUNT(o.order_ID)   AS total_rescued,
+                       SUM(o.totalAmount)  AS total_revenue
+                   FROM `Order` o
+                   JOIN Blind_Box b ON o.box_ID = b.box_ID
+                   WHERE b.store_ID = %s
+                     AND o.status   = 'Claimed'""",
+                (store_id,),
+            )
+            row = cur.fetchone()
+        return jsonify({
+            "total_rescued": row["total_rescued"] or 0,
+            "total_revenue": float(row["total_revenue"] or 0),
+        })
+    except Exception as e:
+        msg = e.args[1] if len(e.args) > 1 else str(e)
+        return jsonify({"error": msg}), 500
     finally:
         conn.close()
 

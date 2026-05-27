@@ -357,6 +357,67 @@
       padding: 20px 0;
       animation: blink 1s step-end infinite;
     }
+
+    /* ── analytics panel ── */
+    .analytics-wrap {
+      max-width: 1100px;
+      margin: 0 auto 28px;
+      padding: 0 20px;
+    }
+    .analytics-panel {
+      background: var(--surface);
+      border: 3px solid var(--border);
+      box-shadow: 6px 6px 0 rgba(0,0,0,0.28);
+      padding: 22px 28px 26px;
+    }
+    .analytics-title {
+      font-size: 0.5rem;
+      color: var(--amber);
+      letter-spacing: 3px;
+      margin-bottom: 20px;
+      border-left: 4px solid var(--amber);
+      padding-left: 12px;
+    }
+    .analytics-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 16px;
+    }
+    .stat-card {
+      background: var(--header-bg);
+      border: 2px solid var(--border);
+      padding: 18px 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      animation: slide-in 0.2s ease both;
+    }
+    .stat-card:nth-child(1) { animation-delay: 0.05s; }
+    .stat-card:nth-child(2) { animation-delay: 0.12s; }
+    .stat-label-sm {
+      font-size: 0.3rem;
+      color: var(--dim);
+      letter-spacing: 2px;
+      text-transform: uppercase;
+    }
+    .stat-num {
+      font-size: 1.1rem;
+      line-height: 1.2;
+    }
+    .stat-num.mint  { color: var(--mint); }
+    .stat-num.amber { color: var(--amber); }
+    .stat-sub {
+      font-size: 0.3rem;
+      color: var(--dim);
+      letter-spacing: 1px;
+    }
+    .analytics-panel.loading .stat-num {
+      background: var(--border);
+      color: transparent;
+      border-radius: 2px;
+      animation: shimmer 1.1s ease infinite alternate;
+    }
+    @keyframes shimmer { from { opacity: 0.4; } to { opacity: 0.85; } }
   </style>
 </head>
 <body>
@@ -374,6 +435,28 @@
   <div class="page-heading">
     <h1>🌿 ECOEAT</h1>
     <p>VENDOR DASHBOARD v1.0</p>
+  </div>
+
+  <!-- ── Analytics panel ── -->
+  <div class="analytics-wrap">
+    <div class="analytics-panel loading" id="analytics-panel">
+      <div class="analytics-title">📊 ANALYTICS TERMINAL</div>
+      <div class="analytics-grid">
+
+        <div class="stat-card">
+          <div class="stat-label-sm">TOTAL BOXES RESCUED</div>
+          <div class="stat-num mint" id="stat-rescued">—</div>
+          <div class="stat-sub">CLAIMED ORDERS</div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-label-sm">TOTAL REVENUE GENERATED</div>
+          <div class="stat-num amber" id="stat-revenue">—</div>
+          <div class="stat-sub">FROM CLAIMED ORDERS ONLY</div>
+        </div>
+
+      </div>
+    </div>
   </div>
 
   <!-- ── 3-section dashboard ── -->
@@ -469,7 +552,7 @@
   </div><!-- /.dashboard -->
 
 <script>
-  // ── Auth guard ────────────────────────────────────────────────────────────
+  // ── Auth guard + initial data load ──────────────────────────────────────
   (async () => {
     try {
       const res  = await fetch('/api/me');
@@ -481,8 +564,30 @@
       window.location.href = '/login';
       return;
     }
+    // Fire all three data fetches in parallel once auth is confirmed
+    loadAnalytics();
     loadInventory();
   })();
+
+  // ── Analytics ─────────────────────────────────────────────────────────────
+  async function loadAnalytics() {
+    try {
+      const res  = await fetch('/api/vendor/analytics');
+      if (!res.ok) return;
+      const data = await res.json();
+
+      document.getElementById('stat-rescued').textContent =
+        data.total_rescued ?? 0;
+      document.getElementById('stat-revenue').textContent =
+        `RM ${parseFloat(data.total_revenue ?? 0).toFixed(2)}`;
+
+      document.getElementById('analytics-panel').classList.remove('loading');
+    } catch {
+      document.getElementById('stat-rescued').textContent = 'ERR';
+      document.getElementById('stat-revenue').textContent = 'ERR';
+      document.getElementById('analytics-panel').classList.remove('loading');
+    }
+  }
 
   document.getElementById('btn-logout').addEventListener('click', async () => {
     await fetch('/api/logout', { method: 'POST' });

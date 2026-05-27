@@ -104,6 +104,71 @@
       padding: 0 16px;
     }
 
+    /* ── leaderboard ── */
+    .leaderboard-wrap {
+      max-width: 1100px;
+      margin: 36px auto 0;
+      padding: 0 16px;
+    }
+    .leaderboard-panel {
+      background: var(--surface);
+      border: 3px solid var(--border);
+      box-shadow: 6px 6px 0 rgba(0,0,0,0.28);
+      padding: 24px 28px 28px;
+    }
+    .lb-title {
+      font-size: 0.55rem;
+      color: var(--amber);
+      letter-spacing: 3px;
+      margin-bottom: 20px;
+      border-left: 4px solid var(--amber);
+      padding-left: 12px;
+    }
+    .lb-list { list-style: none; }
+    .lb-row {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      padding: 12px 0;
+      border-bottom: 1px solid var(--border);
+      animation: slide-in 0.15s ease both;
+    }
+    .lb-row:last-child { border-bottom: none; }
+    @keyframes slide-in {
+      from { opacity: 0; transform: translateX(-8px); }
+      to   { opacity: 1; transform: translateX(0); }
+    }
+    .lb-row:nth-child(1) { animation-delay: 0.05s; }
+    .lb-row:nth-child(2) { animation-delay: 0.10s; }
+    .lb-row:nth-child(3) { animation-delay: 0.15s; }
+    .lb-row:nth-child(4) { animation-delay: 0.20s; }
+    .lb-row:nth-child(5) { animation-delay: 0.25s; }
+
+    .lb-rank {
+      font-size: 0.6rem;
+      min-width: 32px;
+      text-align: center;
+    }
+    .lb-rank-1 { color: var(--amber); }
+    .lb-rank-2 { color: #c0c0c0; }
+    .lb-rank-3 { color: #cd7f32; }
+    .lb-rank-n { color: var(--dim); }
+
+    .lb-name  { flex: 1; font-size: 0.42rem; color: var(--text); }
+    .lb-score {
+      font-size: 0.5rem;
+      color: var(--mint);
+      letter-spacing: 2px;
+      white-space: nowrap;
+    }
+    .lb-score::after { content: ' PTS'; font-size: 0.3rem; color: var(--dim); }
+    .lb-empty {
+      font-size: 0.4rem;
+      color: var(--dim);
+      text-align: center;
+      padding: 20px 0;
+    }
+
     .section-title {
       font-size: 0.6rem;
       color: var(--coral);
@@ -303,6 +368,16 @@
     </div>
   </header>
 
+  <!-- Leaderboard -->
+  <div class="leaderboard-wrap">
+    <div class="leaderboard-panel">
+      <div class="lb-title">🏆 TOP RESCUERS (HIGH SCORES)</div>
+      <ul class="lb-list" id="lb-list">
+        <li class="lb-empty blink">▓▓▓ LOADING... ▓▓▓</li>
+      </ul>
+    </div>
+  </div>
+
   <main>
     <p class="section-title">// AVAILABLE BLIND BOXES</p>
     <div id="box-grid"></div>
@@ -479,7 +554,39 @@
     reserveBox(parseInt(btn.dataset.boxId), btn.dataset.flash, btn);
   });
 
+  // ── Leaderboard ────────────────────────────────────────────────────────
+  async function loadLeaderboard() {
+    const list = document.getElementById('lb-list');
+    try {
+      const res   = await fetch('/api/leaderboard');
+      const rows  = await res.json();
+      list.innerHTML = '';
+
+      if (!rows.length) {
+        list.innerHTML = '<li class="lb-empty">NO SCORES YET. START RESCUING!</li>';
+        return;
+      }
+
+      const medals = ['🥇', '🥈', '🥉'];
+      const rankClasses = ['lb-rank-1', 'lb-rank-2', 'lb-rank-3', 'lb-rank-n', 'lb-rank-n'];
+
+      rows.forEach((row, i) => {
+        const li = document.createElement('li');
+        li.className = 'lb-row';
+        li.innerHTML = `
+          <span class="lb-rank ${rankClasses[i]}">${medals[i] ?? `#${i + 1}`}</span>
+          <span class="lb-name">${row.name}</span>
+          <span class="lb-score">${row.eco_points}</span>
+        `;
+        list.appendChild(li);
+      });
+    } catch {
+      list.innerHTML = '<li class="lb-empty" style="color:var(--rose)">FAILED TO LOAD.</li>';
+    }
+  }
+
   initPage();
+  loadLeaderboard();
 </script>
 </body>
 </html>
