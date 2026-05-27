@@ -65,12 +65,11 @@ def signup():
     name     = data.get("name", "").strip()
     email    = data.get("email", "").strip()
     password = data.get("password", "")
-    phone    = data.get("phone", "").strip()
 
     if role not in ("student", "store"):
         return jsonify({"error": "role must be 'student' or 'store'."}), 400
-    if not all([name, email, password, phone]):
-        return jsonify({"error": "name, email, password, and phone are required."}), 400
+    if not all([name, email, password]):
+        return jsonify({"error": "name, email, and password are required."}), 400
 
     pw_hash = generate_password_hash(password)
     conn = get_db()
@@ -82,20 +81,19 @@ def signup():
                     return jsonify({"error": "student_number is required for students."}), 400
                 cur.execute(
                     """INSERT INTO Student
-                           (name, student_number, phone, email, password_hash, acc_balance, eco_points)
-                       VALUES (%s, %s, %s, %s, %s, 50.00, 0)""",
-                    (name, student_number, phone, email, pw_hash),
+                           (name, student_number, email, password_hash, acc_balance, eco_points)
+                       VALUES (%s, %s, %s, %s, 50.00, 0)""",
+                    (name, student_number, email, pw_hash),
                 )
                 new_id = cur.lastrowid
             else:
                 category = data.get("category", "").strip()
-                location = data.get("location", "").strip()
                 if not category:
                     return jsonify({"error": "category is required for stores."}), 400
                 cur.execute(
-                    """INSERT INTO Store (name, location, category, email, password_hash)
-                       VALUES (%s, %s, %s, %s, %s)""",
-                    (name, location, category, email, pw_hash),
+                    """INSERT INTO Store (name, category, email, password_hash)
+                       VALUES (%s, %s, %s, %s)""",
+                    (name, category, email, pw_hash),
                 )
                 new_id = cur.lastrowid
         conn.commit()
@@ -137,7 +135,7 @@ def login():
                 )
             else:
                 cur.execute(
-                    "SELECT store_ID AS id, name, email, password_hash, category, location, rating "
+                    "SELECT store_ID AS id, name, email, password_hash, category, rating "
                     "FROM Store WHERE email = %s",
                     (email,),
                 )
@@ -171,13 +169,13 @@ def me():
         with conn.cursor() as cur:
             if role == "student":
                 cur.execute(
-                    "SELECT SID AS id, name, student_number, phone, email, acc_balance, eco_points "
+                    "SELECT SID AS id, name, student_number, email, acc_balance, eco_points "
                     "FROM Student WHERE SID = %s",
                     (user_id,),
                 )
             else:
                 cur.execute(
-                    "SELECT store_ID AS id, name, location, category, rating, email "
+                    "SELECT store_ID AS id, name, category, rating, email "
                     "FROM Store WHERE store_ID = %s",
                     (user_id,),
                 )
@@ -215,13 +213,13 @@ def student_get_orders():
             cur.execute("""
                 SELECT
                     o.order_ID,
-                    o.pickUpCode,
+                    o.pickup_code     AS pickUpCode,
                     o.status,
-                    o.orderTime,
-                    b.name          AS box_name,
+                    o.order_timestamp AS orderTime,
+                    b.name            AS box_name,
                     b.flashPrice,
                     b.pickUpDeadline,
-                    s.name          AS store_name,
+                    s.name            AS store_name,
                     IF(r.review_ID IS NOT NULL, 1, 0) AS has_review
                 FROM `Order` o
                 JOIN Blind_Box b ON o.box_ID  = b.box_ID
@@ -255,11 +253,13 @@ def student_cancel_order(order_id):
     conn = get_db()
     try:
         with conn.cursor() as cur:
-            # Verify order belongs to this student and is still Pending
+            # Verify order belongs to this student and is still Pending,
+            # then derive the refund amount from the box's flashPrice
             cur.execute(
-                """SELECT box_ID, totalAmount
-                   FROM `Order`
-                   WHERE order_ID = %s AND SID = %s AND status = 'Pending'""",
+                """SELECT o.box_ID, b.flashPrice AS refund_amount
+                   FROM `Order` o
+                   JOIN Blind_Box b ON o.box_ID = b.box_ID
+                   WHERE o.order_ID = %s AND o.SID = %s AND o.status = 'Pending'""",
                 (order_id, sid),
             )
             order = cur.fetchone()
@@ -270,7 +270,7 @@ def student_cancel_order(order_id):
                 }), 400
 
             box_id      = order["box_ID"]
-            total_amount = order["totalAmount"]
+            total_amount = order["refund_amount"]
 
             # a) Cancel the order
             cur.execute(
@@ -423,7 +423,6 @@ def get_boxes():
                     b.stockQuantity,
                     b.pickUpDeadline,
                     s.name     AS storeName,
-                    s.location,
                     s.category,
                     s.rating
                 FROM Blind_Box b
@@ -455,7 +454,7 @@ def vendor_analytics():
             cur.execute(
                 """SELECT
                        COUNT(o.order_ID)   AS total_rescued,
-                       SUM(o.totalAmount)  AS total_revenue
+                       COALESCE(SUM(b.flashPrice), 0) AS total_revenue
                    FROM `Order` o
                    JOIN Blind_Box b ON o.box_ID = b.box_ID
                    WHERE b.store_ID = %s
@@ -699,7 +698,7 @@ def claim_order():
     try:
         with conn.cursor() as cur:
             cur.execute(
-                "SELECT order_ID, status FROM `Order` WHERE pickUpCode = %s",
+                "SELECT order_ID, status FROM `Order` WHERE pickup_code = %s",
                 (pick_up_code,),
             )
             order = cur.fetchone()
