@@ -584,6 +584,54 @@ def vendor_add_box():
         conn.close()
 
 
+# ── PUT /api/vendor/boxes/<box_id> ───────────────────────────────────────────
+
+@app.route("/api/vendor/boxes/<int:box_id>", methods=["PUT"])
+def vendor_update_box(box_id):
+    store_id, err = login_required(role="store")
+    if err:
+        return err
+
+    data             = request.get_json(force=True)
+    name             = data.get("name", "").strip()
+    original_price   = data.get("originalPrice")
+    flash_price      = data.get("flashPrice")
+    stock_quantity   = data.get("stockQuantity")
+    pick_up_deadline = data.get("pickUpDeadline", "").strip()
+
+    if not all([name, original_price is not None, flash_price is not None,
+                stock_quantity is not None, pick_up_deadline]):
+        return jsonify({"error": "All fields are required."}), 400
+
+    conn = get_db()
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                "SELECT box_ID FROM Blind_Box WHERE box_ID = %s AND store_ID = %s",
+                (box_id, store_id),
+            )
+            if not cur.fetchone():
+                return jsonify({"error": "Box not found or does not belong to your store."}), 404
+
+            cur.execute(
+                """UPDATE Blind_Box
+                   SET name = %s, originalPrice = %s, flashPrice = %s,
+                       stockQuantity = %s, pickUpDeadline = %s
+                   WHERE box_ID = %s AND store_ID = %s""",
+                (name, original_price, flash_price, stock_quantity,
+                 pick_up_deadline, box_id, store_id),
+            )
+        conn.commit()
+        return jsonify({"message": "Box updated.", "box_ID": box_id})
+
+    except Exception as e:
+        conn.rollback()
+        msg = e.args[1] if len(e.args) > 1 else str(e)
+        return jsonify({"error": msg}), 500
+    finally:
+        conn.close()
+
+
 # ── PUT /api/vendor/boxes/<box_id>/toggle ────────────────────────────────────
 
 @app.route("/api/vendor/boxes/<int:box_id>/toggle", methods=["PUT"])

@@ -472,6 +472,54 @@
     }
     @keyframes shimmer { from { opacity: 0.4; } to { opacity: 0.85; } }
 
+    /* ── Edit Box dialog ── */
+    #dialog-edit-box {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      margin: 0;
+      background: var(--surface);
+      border: 4px solid var(--amber);
+      box-shadow: 8px 8px 0 rgba(0,0,0,0.45), 0 0 32px rgba(245,166,35,0.35);
+      color: var(--text);
+      font-family: 'Press Start 2P', monospace;
+      max-width: 520px;
+      width: 90%;
+      padding: 28px 26px 32px;
+    }
+    #dialog-edit-box::backdrop {
+      background: rgba(10, 10, 22, 0.88);
+    }
+    .edit-dialog-title {
+      font-size: 1rem;
+      color: var(--amber);
+      border-left: 5px solid var(--amber);
+      padding-left: 14px;
+      letter-spacing: 5px;
+      line-height: 1.4;
+      margin-bottom: 26px;
+      text-shadow:
+        0 0  4px rgba(245,166,35,0.85),
+        0 0 12px rgba(245,166,35,0.6),
+        0 0 24px rgba(245,166,35,0.35),
+        2px 2px 0 rgba(0,0,0,0.45);
+    }
+    .edit-dialog-btns {
+      display: flex;
+      gap: 14px;
+      margin-top: 22px;
+      flex-wrap: wrap;
+    }
+    /* Size EDIT button to match other inv-actions buttons */
+    .inv-actions .edit-box-btn {
+      font-size: 11px !important;
+      padding: 8px 14px !important;
+      letter-spacing: 1px;
+      min-width: 112px;
+      line-height: 1.4;
+    }
+
     /* ── customer feedback (reviews) ── */
     .reviews-wrap {
       max-width: 1100px;
@@ -675,6 +723,44 @@
       </div>
     </div>
   </div>
+
+  <!-- ── Edit Box Modal ─────────────────────────────────────────────────── -->
+  <dialog class="nes-dialog is-dark" id="dialog-edit-box">
+    <div class="edit-dialog-title">// EDIT BOX</div>
+    <input type="hidden" id="edit-box-id" />
+
+    <div class="field">
+      <label class="field-label" for="edit-box-name">BOX NAME:</label>
+      <input class="field-input" id="edit-box-name" type="text" placeholder="Sunrise Pastry Box" />
+    </div>
+
+    <div class="form-row">
+      <div class="field">
+        <label class="field-label" for="edit-orig-price">ORIGINAL (RM):</label>
+        <input class="field-input" id="edit-orig-price" type="number" step="0.01" min="0.01" placeholder="12.00" />
+      </div>
+      <div class="field">
+        <label class="field-label" for="edit-flash-price">FLASH (RM):</label>
+        <input class="field-input" id="edit-flash-price" type="number" step="0.01" min="0.01" placeholder="4.50" />
+      </div>
+    </div>
+
+    <div class="form-row">
+      <div class="field">
+        <label class="field-label" for="edit-stock-qty">STOCK QTY:</label>
+        <input class="field-input" id="edit-stock-qty" type="number" step="1" min="0" placeholder="5" />
+      </div>
+      <div class="field">
+        <label class="field-label" for="edit-pickup-deadline">PICKUP BY:</label>
+        <input class="field-input" id="edit-pickup-deadline" type="time" />
+      </div>
+    </div>
+
+    <div class="edit-dialog-btns">
+      <button type="button" class="nes-btn is-warning" id="btn-edit-save">SAVE CHANGES</button>
+      <button type="button" class="nes-btn is-error"   id="btn-edit-cancel">CANCEL</button>
+    </div>
+  </dialog>
 
 <script>
   // ── Auth guard + initial data load ──────────────────────────────────────
@@ -939,7 +1025,12 @@
   function buildInvItem(box) {
     const li = document.createElement('li');
     li.className  = `inv-item${box.is_active ? '' : ' inactive'}`;
-    li.dataset.id = box.box_ID;
+    li.dataset.id           = box.box_ID;
+    li.dataset.name         = box.name;
+    li.dataset.origPrice    = box.originalPrice ?? '';
+    li.dataset.flashPrice   = box.flashPrice;
+    li.dataset.stock        = box.stockQuantity;
+    li.dataset.deadline     = box.pickUpDeadline ?? '';
 
     const toggleCls   = box.is_active ? 'btn-toggle-hide'    : 'btn-toggle-publish';
     const toggleLabel = box.is_active ? '[ HIDE BOX ]'        : '[ PUBLISH ]';
@@ -956,6 +1047,7 @@
         </div>
       </div>
       <div class="inv-actions">
+        <button class="nes-btn is-warning edit-box-btn">EDIT</button>
         <button class="${toggleCls} btn-toggle">${toggleLabel}</button>
         <button class="btn-rose btn-delete">[ DELETE ]</button>
       </div>
@@ -963,8 +1055,76 @@
 
     li.querySelector('.btn-delete').addEventListener('click', () => deleteBox(box.box_ID, li));
     li.querySelector('.btn-toggle').addEventListener('click', () => toggleBox(box.box_ID, li));
+    li.querySelector('.edit-box-btn').addEventListener('click', () => openEditModal(li.dataset));
     return li;
   }
+
+  // ── Edit Box Modal ────────────────────────────────────────────────────────
+  function openEditModal(d) {
+    document.getElementById('edit-box-id').value         = d.id;
+    document.getElementById('edit-box-name').value       = d.name;
+    document.getElementById('edit-orig-price').value     = d.origPrice;
+    document.getElementById('edit-flash-price').value    = d.flashPrice;
+    document.getElementById('edit-stock-qty').value      = d.stock;
+    // <input type="time"> needs HH:MM – strip seconds if present
+    document.getElementById('edit-pickup-deadline').value = (d.deadline || '').slice(0, 5);
+    document.getElementById('dialog-edit-box').showModal();
+  }
+
+  document.getElementById('btn-edit-cancel').addEventListener('click', () => {
+    document.getElementById('dialog-edit-box').close();
+  });
+
+  document.getElementById('btn-edit-save').addEventListener('click', async () => {
+    const boxId   = document.getElementById('edit-box-id').value;
+    const name    = document.getElementById('edit-box-name').value.trim();
+    const origP   = parseFloat(document.getElementById('edit-orig-price').value);
+    const flashP  = parseFloat(document.getElementById('edit-flash-price').value);
+    const stock   = parseInt(document.getElementById('edit-stock-qty').value, 10);
+    const deadline = document.getElementById('edit-pickup-deadline').value;
+
+    if (!name || isNaN(origP) || isNaN(flashP) || isNaN(stock) || !deadline) {
+      showToast('inv-toast', false, 'All edit fields are required.'); return;
+    }
+    if (flashP >= origP) {
+      showToast('inv-toast', false, 'Flash price must be less than original.'); return;
+    }
+    if (stock < 0) {
+      showToast('inv-toast', false, 'Stock cannot be negative.'); return;
+    }
+
+    const saveBtn = document.getElementById('btn-edit-save');
+    saveBtn.disabled    = true;
+    saveBtn.textContent = 'SAVING...';
+
+    try {
+      const res  = await fetch(`/api/vendor/boxes/${boxId}`, {
+        method:  'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({
+          name,
+          originalPrice:  origP,
+          flashPrice:     flashP,
+          stockQuantity:  stock,
+          pickUpDeadline: deadline,
+        }),
+      });
+      const data = await res.json();
+
+      if (res.ok) {
+        document.getElementById('dialog-edit-box').close();
+        showToast('inv-toast', true, `Box #${boxId} updated!`);
+        loadInventory();
+      } else {
+        showToast('inv-toast', false, data.error || 'Update failed.');
+      }
+    } catch (err) {
+      showToast('inv-toast', false, 'Network error.');
+    } finally {
+      saveBtn.disabled    = false;
+      saveBtn.textContent = 'SAVE CHANGES';
+    }
+  });
 
   async function loadInventory() {
     const loading = document.getElementById('inv-loading');
