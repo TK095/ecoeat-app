@@ -86,10 +86,24 @@
     }
 
     /* ── profile panel ── */
+    .user-avatar {
+      width: 60px;
+      height: 60px;
+      image-rendering: pixelated;
+      border: 2px solid white;
+      border-radius: 2px;
+      display: block;
+    }
+    .avatar-row {
+      grid-column: 1 / -1;
+      display: flex;
+      justify-content: center;
+      margin-bottom: 8px;
+    }
     .profile-panel {
       background: var(--surface);
       border: 3px solid var(--border);
-      box-shadow: 6px 6px 0 rgba(0,0,0,0.28);
+      box-shadow: 6px 6px 0 rgba(0,0,0,0.28), 0 0 18px rgba(0,212,255,0.22);
       padding: 24px 28px;
       margin-bottom: 28px;
       display: grid;
@@ -134,7 +148,7 @@
       background: var(--surface);
       border: 3px solid var(--border);
       padding: 20px 18px;
-      box-shadow: 4px 4px 0 rgba(0,0,0,0.28);
+      box-shadow: 4px 4px 0 rgba(0,0,0,0.28), 0 0 12px rgba(233,69,96,0.18);
       display: flex;
       flex-direction: column;
       gap: 0;
@@ -291,7 +305,7 @@
       padding: 30px 28px 28px;
       max-width: 440px;
       width: 100%;
-      box-shadow: 8px 8px 0 rgba(0,0,0,0.4);
+      box-shadow: 8px 8px 0 rgba(0,0,0,0.4), 0 0 28px rgba(233,69,96,0.35);
       animation: pop-in 0.15s ease;
     }
     .rmodal-title {
@@ -394,20 +408,33 @@
 <body>
   <div class="crt-overlay"></div>
 
-  <!-- Top bar -->
-  <div class="top-bar">
-    <a class="back-link" href="/">◀ BACK TO MARKET</a>
-    <button class="btn-logout" id="btn-logout">[ LOGOUT ]</button>
-  </div>
+  <header class="arcade-status-bar">
+    <div class="arcade-brand">
+      <h1 class="neon-title">ECOEAT</h1>
+      <p class="arcade-subtitle">STUDENT TERMINAL</p>
+    </div>
+    <div class="arcade-actions">
+      <img id="header-avatar" class="arcade-avatar" src="" alt="avatar">
+      <div class="arcade-user-info">
+        <span class="user-name" id="header-name"></span>
+        <span class="user-balance" id="header-balance"></span>
+      </div>
+      <a class="nes-btn is-small is-primary" href="/">MARKET</a>
+      <button type="button" class="nes-btn is-small is-error" id="btn-logout">LOGOUT</button>
+    </div>
+  </header>
 
   <div class="page">
 
     <!-- Page title -->
-    <div class="page-title">🎓 MY DASHBOARD</div>
+    <div class="page-title">MY DASHBOARD</div>
     <div class="page-sub">STUDENT PROFILE &amp; ORDER HISTORY</div>
 
     <!-- Profile panel -->
     <div class="profile-panel loading" id="profile-panel">
+      <div class="avatar-row">
+        <img id="profile-avatar" class="user-avatar" src="" alt="avatar">
+      </div>
       <div class="profile-stat">
         <div class="stat-label">STUDENT</div>
         <div class="stat-value mint" id="p-name">—</div>
@@ -421,7 +448,7 @@
         <div class="stat-value amber" id="p-balance">—</div>
       </div>
       <div class="profile-stat">
-        <div class="stat-label">🌱 ECO POINTS</div>
+        <div class="stat-label">ECO POINTS</div>
         <div class="stat-value coral" id="p-points">—</div>
       </div>
     </div>
@@ -437,7 +464,7 @@
   <!-- ── Review Modal ── -->
   <div class="rmodal-overlay" id="review-modal">
     <div class="rmodal-box">
-      <div class="rmodal-title">★ LEAVE A REVIEW</div>
+      <div class="rmodal-title">LEAVE A REVIEW</div>
       <div class="rmodal-subtitle" id="rmodal-box-name"></div>
 
       <div style="font-size:0.32rem; color:var(--dim); letter-spacing:2px; margin-bottom:8px;">YOUR RATING:</div>
@@ -482,11 +509,19 @@
   }
 
   function renderProfile(user) {
+    const avatarUrl = `https://api.dicebear.com/7.x/pixel-art/svg?seed=${encodeURIComponent(user.name)}`;
+    const balanceStr = `RM ${parseFloat(user.acc_balance).toFixed(2)}`;
+
     document.getElementById('p-name').textContent    = user.name;
     document.getElementById('p-number').textContent  = user.student_number;
-    document.getElementById('p-balance').textContent = `RM ${parseFloat(user.acc_balance).toFixed(2)}`;
+    document.getElementById('p-balance').textContent = balanceStr;
     document.getElementById('p-points').textContent  = `${user.eco_points} PTS`;
+    document.getElementById('profile-avatar').src    = avatarUrl;
     document.getElementById('profile-panel').classList.remove('loading');
+
+    document.getElementById('header-name').textContent    = user.name;
+    document.getElementById('header-balance').textContent = balanceStr;
+    document.getElementById('header-avatar').src          = avatarUrl;
   }
 
   async function refreshProfile() {
@@ -544,13 +579,13 @@
       badgeHTML  = `<span class="badge badge-pending">● PENDING</span>`;
       actionHTML = `<button class="btn-cancel" data-id="${order.order_ID}">[ CANCEL ORDER ]</button>`;
     } else if (statusLower === 'canceled') {
-      badgeHTML = `<span class="badge badge-canceled">✘ CANCELED</span>`;
+      badgeHTML = `<span class="badge badge-canceled">[-] CANCELED</span>`;
     } else if (statusLower === 'claimed') {
       if (order.has_review) {
-        badgeHTML = `<span class="badge badge-claimed">✔ CLAIMED</span>
+        badgeHTML = `<span class="badge badge-claimed">[+] CLAIMED</span>
                      <span class="badge badge-reviewed" style="margin-left:8px">★ REVIEWED</span>`;
       } else {
-        badgeHTML  = `<span class="badge badge-claimed">✔ CLAIMED</span>`;
+        badgeHTML  = `<span class="badge badge-claimed">[+] CLAIMED</span>`;
         actionHTML = `<button class="btn-review"
                         data-id="${order.order_ID}"
                         data-name="${order.box_name}">[ ★ LEAVE REVIEW ]</button>`;
@@ -734,13 +769,13 @@
         }
         alert(`REVIEW SUBMITTED! THANK YOU ★${_selectedRating}`);
       } else {
-        reviewErr.textContent   = `⚠ ${data.error || 'Submission failed.'}`;
+        reviewErr.textContent   = `[!] ${data.error || 'Submission failed.'}`;
         reviewErr.style.display = 'block';
         btnRSubmit.disabled     = false;
         btnRSubmit.textContent  = '[ SUBMIT ]';
       }
     } catch (err) {
-      reviewErr.textContent   = `⚠ NETWORK ERROR: ${err.message}`;
+      reviewErr.textContent   = `[!] NETWORK ERROR: ${err.message}`;
       reviewErr.style.display = 'block';
       btnRSubmit.disabled     = false;
       btnRSubmit.textContent  = '[ SUBMIT ]';

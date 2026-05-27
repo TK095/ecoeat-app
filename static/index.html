@@ -85,6 +85,14 @@
     }
     .user-bar .user-name { color: var(--mint); }
     .user-bar .user-balance { color: var(--amber); }
+    .user-avatar {
+      width: 60px;
+      height: 60px;
+      image-rendering: pixelated;
+      border: 2px solid white;
+      border-radius: 2px;
+      flex-shrink: 0;
+    }
     .btn-logout {
       font-family: 'Press Start 2P', monospace;
       font-size: 0.34rem;
@@ -113,7 +121,7 @@
     .leaderboard-panel {
       background: var(--surface);
       border: 3px solid var(--border);
-      box-shadow: 6px 6px 0 rgba(0,0,0,0.28);
+      box-shadow: 6px 6px 0 rgba(0,0,0,0.28), 0 0 18px rgba(0,212,255,0.22);
       padding: 24px 28px 28px;
     }
     .lb-title {
@@ -180,8 +188,8 @@
 
     #box-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-      gap: 24px;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 20px;
     }
 
     /* ── individual card ── */
@@ -191,12 +199,12 @@
       padding: 20px 18px 18px;
       position: relative;
       image-rendering: pixelated;
-      box-shadow: 4px 4px 0 rgba(0,0,0,0.3);
+      box-shadow: 4px 4px 0 rgba(0,0,0,0.3), 0 0 12px rgba(233,69,96,0.2);
       transition: transform 0.1s, box-shadow 0.1s;
     }
     .box-card:hover {
       transform: translate(-2px, -2px);
-      box-shadow: 6px 6px 0 rgba(0,0,0,0.35);
+      box-shadow: 6px 6px 0 rgba(0,0,0,0.35), 0 0 22px rgba(233,69,96,0.42);
     }
 
     .card-store {
@@ -356,24 +364,26 @@
 <body>
   <div class="crt-overlay"></div>
 
-  <header>
-    <h1>🌿 ECOEAT</h1>
-    <p>CAMPUS SURPLUS FOOD RESCUE PLATFORM</p>
-    <div class="user-bar" id="user-bar">
-      <span class="user-name" id="user-name"></span>
-      <span class="user-balance" id="user-balance"></span>
-      <button class="btn-logout" id="btn-logout">[ LOGOUT ]</button>
+  <header class="arcade-status-bar">
+    <div class="arcade-brand">
+      <h1 class="neon-title">ECOEAT</h1>
+      <p class="arcade-subtitle">CAMPUS SURPLUS FOOD RESCUE</p>
     </div>
-    <div class="header-nav">
-      <a class="dashboard-link" href="/student_dashboard">▶ MY PROFILE &amp; ORDERS</a>
-      <a class="vendor-link"    href="/vendor">▶ VENDOR PORTAL</a>
+    <div class="arcade-actions" id="user-bar" style="display:none">
+      <img id="user-avatar" class="arcade-avatar" src="" alt="avatar">
+      <div class="arcade-user-info">
+        <span class="user-name" id="user-name"></span>
+        <span class="user-balance" id="user-balance"></span>
+      </div>
+      <a class="nes-btn is-small is-warning" href="/student_dashboard">PROFILE</a>
+      <button type="button" class="nes-btn is-small is-error" id="btn-logout">LOGOUT</button>
     </div>
   </header>
 
   <!-- Leaderboard -->
   <div class="leaderboard-wrap">
     <div class="leaderboard-panel">
-      <div class="lb-title">🏆 TOP RESCUERS (HIGH SCORES)</div>
+      <div class="lb-title">TOP RESCUERS (HIGH SCORES)</div>
       <ul class="lb-list" id="lb-list">
         <li class="lb-empty blink">▓▓▓ LOADING... ▓▓▓</li>
       </ul>
@@ -415,8 +425,9 @@
       const user = await res.json();
       if (user.role !== 'student') { window.location.href = '/login'; return; }
 
-      document.getElementById('user-name').textContent    = `👤 ${user.name}`;
-      document.getElementById('user-balance').textContent = `💰 RM${parseFloat(user.acc_balance).toFixed(2)}`;
+      document.getElementById('user-name').textContent    = user.name;
+      document.getElementById('user-balance').textContent = `RM ${parseFloat(user.acc_balance).toFixed(2)}`;
+      document.getElementById('user-avatar').src = `https://api.dicebear.com/7.x/pixel-art/svg?seed=${encodeURIComponent(user.name)}`;
       document.getElementById('user-bar').style.display   = 'flex';
     } catch {
       window.location.href = '/login';
@@ -433,7 +444,7 @@
   // ── Modal ───────────────────────────────────────────────────────────────
   function showModal({ success, title, code, msg }) {
     modalBox.classList.toggle('error', !success);
-    document.getElementById('modal-icon').textContent  = success ? '🎉' : '⚠️';
+    document.getElementById('modal-icon').textContent  = success ? '>>' : '!!';
     document.getElementById('modal-title').textContent = title;
     document.getElementById('modal-msg').textContent   = msg;
 
@@ -455,14 +466,22 @@
   });
 
   // ── Helpers ─────────────────────────────────────────────────────────────
-  function starsDisplay(rating) {
-    if (rating === null || rating === undefined) return '<span style="color:var(--dim)">NO RATINGS</span>';
-    const r    = parseFloat(rating);
-    const full = Math.floor(r);
-    const half = (r - full) >= 0.5 ? 1 : 0;
+  function ratingBadge(rating) {
+    if (rating === null || rating === undefined) {
+      return `<div class="rating-badge rating-badge-empty">NO RATINGS YET</div>`;
+    }
+    const r     = parseFloat(rating);
+    const full  = Math.floor(r);
+    const half  = (r - full) >= 0.5 ? 1 : 0;
     const empty = 5 - full - half;
-    return `<span style="color:var(--amber)">${'★'.repeat(full)}${half ? '½' : ''}${'☆'.repeat(empty)}</span>`
-         + `<span style="color:var(--dim); font-size:0.28rem; margin-left:5px">${r.toFixed(1)}</span>`;
+    let icons   = '';
+    for (let i = 0; i < full;  i++) icons += '<i class="nes-icon is-small star"></i>';
+    if (half)                       icons += '<i class="nes-icon is-small star is-half"></i>';
+    for (let i = 0; i < empty; i++) icons += '<i class="nes-icon is-small star is-empty"></i>';
+    return `<div class="rating-badge">
+              <span class="rating-stars">${icons}</span>
+              <span class="rating-score">${r.toFixed(1)}</span>
+            </div>`;
   }
 
   function formatTime(t) {
@@ -481,6 +500,7 @@
     card.innerHTML = `
       <div class="card-store">${box.storeName}</div>
       <div class="card-name">${box.name}</div>
+      ${ratingBadge(box.rating)}
       <div class="card-prices">
         <span class="price-original">RM${parseFloat(box.originalPrice).toFixed(2)}</span>
         <span class="price-flash">RM${parseFloat(box.flashPrice).toFixed(2)}</span>
@@ -488,8 +508,7 @@
       <div class="card-meta">
         PICKUP BY: <span>${formatTime(box.pickUpDeadline)}</span><br>
         LOCATION: <span>${box.location}</span><br>
-        CATEGORY: <span>${box.category}</span><br>
-        RATING: <span>${starsDisplay(box.rating)}</span>
+        CATEGORY: <span>${box.category}</span>
       </div>
       <div class="stock-badge">STOCK: ${box.stockQuantity}</div>
       <button class="btn-reserve" data-box-id="${box.box_ID}" data-flash="${box.flashPrice}">
@@ -542,7 +561,7 @@
         loadBoxes();
         // Refresh balance display
         fetch('/api/me').then(r => r.json()).then(u => {
-          document.getElementById('user-balance').textContent = `💰 RM${parseFloat(u.acc_balance).toFixed(2)}`;
+          document.getElementById('user-balance').textContent = `RM ${parseFloat(u.acc_balance).toFixed(2)}`;
         });
       } else {
         showModal({
@@ -580,14 +599,13 @@
         return;
       }
 
-      const medals = ['🥇', '🥈', '🥉'];
       const rankClasses = ['lb-rank-1', 'lb-rank-2', 'lb-rank-3', 'lb-rank-n', 'lb-rank-n'];
 
       rows.forEach((row, i) => {
         const li = document.createElement('li');
         li.className = 'lb-row';
         li.innerHTML = `
-          <span class="lb-rank ${rankClasses[i]}">${medals[i] ?? `#${i + 1}`}</span>
+          <span class="lb-rank ${rankClasses[i]}">#${i + 1}</span>
           <span class="lb-name">${row.name}</span>
           <span class="lb-score">${row.eco_points}</span>
         `;

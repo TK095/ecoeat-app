@@ -7,6 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="https://unpkg.com/nes.css@2.3.0/css/nes.min.css" />
+  <link rel="stylesheet" href="/static/style.css" />
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -37,23 +38,18 @@
 
     .terminal {
       width: 100%;
-      max-width: 520px;
-      background: var(--surface);
-      border: 3px solid var(--border);
-      box-shadow: 8px 8px 0 rgba(0,0,0,0.3);
-      padding: 36px 32px 40px;
+      max-width: 480px;
+      box-shadow:
+        8px 8px 0 rgba(0,0,0,0.4),
+        0 0 28px rgba(0,212,255,0.28);
+      padding: 28px 26px 30px;
     }
 
-    .terminal-header { text-align: center; margin-bottom: 28px; }
-    .logo {
-      font-size: clamp(1rem, 5vw, 1.4rem);
-      color: var(--mint);
-      letter-spacing: 4px;
-    }
+    .terminal-header { text-align: center; margin-bottom: 20px; }
     .subtitle {
-      font-size: 0.4rem;
-      color: var(--coral);
-      margin-top: 10px;
+      font-size: 11px;
+      color: var(--mint);
+      margin-top: 12px;
       letter-spacing: 3px;
     }
 
@@ -64,88 +60,42 @@
     }
 
     /* ── fields ── */
-    .field { margin-bottom: 18px; }
+    .field { margin-bottom: 14px; }
     .field-label {
       display: block;
-      font-size: 0.36rem;
+      font-size: 11px;
       color: var(--mint);
       letter-spacing: 2px;
       margin-bottom: 7px;
     }
-    .field-input, .field-select {
-      font-family: 'Press Start 2P', monospace;
-      font-size: 0.45rem;
-      background: var(--header-bg);
-      color: var(--text);
-      border: 3px solid var(--border);
-      width: 100%;
-      padding: 11px 13px;
-      outline: none;
-      caret-color: var(--mint);
-      -webkit-appearance: none;
-      appearance: none;
-    }
-    .field-input:focus, .field-select:focus { border-color: var(--mint); }
-    .field-input::placeholder { color: var(--border); font-size: 0.38rem; }
-
-    /* select arrow */
-    .select-wrap { position: relative; }
-    .select-wrap::after {
-      content: '▼';
-      position: absolute;
-      right: 12px;
-      top: 50%;
-      transform: translateY(-50%);
-      font-size: 0.4rem;
-      color: var(--dim);
-      pointer-events: none;
-    }
-    .field-select option { background: var(--header-bg); }
 
     /* dynamic extra field */
     #extra-field { transition: opacity 0.15s; }
 
     /* ── hint text ── */
     .field-hint {
-      font-size: 0.3rem;
+      font-size: 9px;
       color: var(--dim);
       margin-top: 5px;
       letter-spacing: 1px;
     }
 
-    /* ── submit button ── */
-    .btn-submit {
-      font-family: 'Press Start 2P', monospace;
-      font-size: 0.52rem;
+    /* full-width primary submit */
+    #btn-register {
       width: 100%;
-      padding: 14px 0;
-      background: var(--mint);
-      color: var(--header-bg);
-      border: none;
-      cursor: pointer;
-      letter-spacing: 2px;
-      box-shadow: 4px 4px 0 #3a7a63;
-      transition: transform 0.08s, box-shadow 0.08s;
-      margin-top: 8px;
-    }
-    .btn-submit:hover  { background: #9edfc8; }
-    .btn-submit:active { transform: translate(2px,2px); box-shadow: 2px 2px 0 #3a7a63; }
-    .btn-submit:disabled {
-      background: var(--border);
-      color: var(--dim);
-      cursor: not-allowed;
-      box-shadow: none;
+      margin-top: 10px;
     }
 
     /* ── result panels ── */
     .result-panel {
       display: none;
-      margin-top: 20px;
+      margin-top: 18px;
       border: 3px solid var(--rose);
-      padding: 14px 16px;
+      padding: 12px 14px;
       background: var(--header-bg);
-      font-size: 0.38rem;
-      line-height: 2;
+      font-size: 11px;
+      line-height: 1.8;
+      letter-spacing: 1px;
       animation: slide-in 0.15s ease;
     }
     .result-panel.success { border-color: var(--mint); color: var(--mint); }
@@ -157,10 +107,11 @@
 
     .footer-link {
       text-align: center;
-      margin-top: 24px;
-      font-size: 0.36rem;
+      margin-top: 20px;
+      font-size: 11px;
       color: var(--dim);
-      line-height: 2.5;
+      line-height: 2;
+      letter-spacing: 1px;
     }
     .footer-link a {
       color: var(--amber);
@@ -174,14 +125,16 @@
   </style>
 </head>
 <body>
+  <div class="crt-overlay"></div>
 
-  <div class="terminal">
+  <div class="terminal nes-container is-dark with-title is-centered">
+    <p class="title">REGISTER.EXE</p>
     <div class="terminal-header">
-      <div class="logo">🌿 ECOEAT</div>
+      <h1 class="logo neon-title">ECOEAT</h1>
       <div class="subtitle">NEW USER REGISTRATION</div>
     </div>
 
-    <div style="font-size:0.36rem; color:var(--dim); margin-bottom:18px; letter-spacing:1px;">
+    <div style="font-size:10px; color:var(--dim); margin-bottom:14px; letter-spacing:1px;">
       C:\ECOEAT&gt; REGISTER.EXE<span class="cursor-blink">█</span>
     </div>
     <hr class="divider" />
@@ -189,10 +142,10 @@
     <!-- Role -->
     <div class="field">
       <label class="field-label" for="role">ROLE:</label>
-      <div class="select-wrap">
-        <select class="field-select" id="role">
-          <option value="student">🎓 STUDENT</option>
-          <option value="store">🏪 VENDOR / STORE</option>
+      <div class="nes-select is-dark">
+        <select id="role">
+          <option value="student">STUDENT</option>
+          <option value="store">VENDOR / STORE</option>
         </select>
       </div>
     </div>
@@ -200,35 +153,35 @@
     <!-- Name -->
     <div class="field">
       <label class="field-label" for="name">FULL NAME:</label>
-      <input class="field-input" id="name" type="text" placeholder="Aung Kyaw Zin" autocomplete="name" />
+      <input class="nes-input is-dark" id="name" type="text" placeholder="Aung Kyaw Zin" autocomplete="name" />
     </div>
 
     <!-- Email -->
     <div class="field">
       <label class="field-label" for="email">EMAIL:</label>
-      <input class="field-input" id="email" type="email" placeholder="user@campus.edu" autocomplete="email" />
+      <input class="nes-input is-dark" id="email" type="email" placeholder="user@campus.edu" autocomplete="email" />
     </div>
 
     <!-- Password -->
     <div class="field">
       <label class="field-label" for="password">PASSWORD:</label>
-      <input class="field-input" id="password" type="password" placeholder="••••••••" autocomplete="new-password" />
+      <input class="nes-input is-dark" id="password" type="password" placeholder="********" autocomplete="new-password" />
       <div class="field-hint">MIN. 6 CHARACTERS RECOMMENDED</div>
     </div>
 
     <!-- Phone -->
     <div class="field">
       <label class="field-label" for="phone">PHONE:</label>
-      <input class="field-input" id="phone" type="tel" placeholder="09-XXXX-XXXXX" autocomplete="tel" />
+      <input class="nes-input is-dark" id="phone" type="tel" placeholder="09-XXXX-XXXXX" autocomplete="tel" />
     </div>
 
     <!-- Dynamic extra field: student number OR category -->
     <div class="field" id="extra-field">
       <label class="field-label" id="extra-label">STUDENT NUMBER:</label>
-      <input class="field-input" id="extra-input" type="text" placeholder="CS2021001" />
+      <input class="nes-input is-dark" id="extra-input" type="text" placeholder="CS2021001" />
     </div>
 
-    <button class="btn-submit" id="btn-register">[ CREATE ACCOUNT ]</button>
+    <button type="button" class="nes-btn is-primary" id="btn-register">CREATE ACCOUNT</button>
 
     <div class="result-panel" id="result-panel"></div>
 
@@ -259,7 +212,7 @@
 
   function showResult(success, msg) {
     resultPanel.className       = `result-panel ${success ? 'success' : 'error'}`;
-    resultPanel.textContent     = `${success ? '✔' : '⚠'} ${msg}`;
+    resultPanel.textContent     = `${success ? '[+]' : '[!]'} ${msg}`;
     resultPanel.style.display   = 'block';
   }
 
@@ -289,7 +242,7 @@
     }
 
     btnRegister.disabled    = true;
-    btnRegister.textContent = '[ REGISTERING... ]';
+    btnRegister.textContent = 'REGISTERING...';
     resultPanel.style.display = 'none';
 
     try {
@@ -310,7 +263,7 @@
       showResult(false, 'Network error. Try again.');
     } finally {
       btnRegister.disabled    = false;
-      btnRegister.textContent = '[ CREATE ACCOUNT ]';
+      btnRegister.textContent = 'CREATE ACCOUNT';
     }
   });
 </script>

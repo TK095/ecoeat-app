@@ -7,6 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="https://unpkg.com/nes.css@2.3.0/css/nes.min.css" />
+  <link rel="stylesheet" href="/static/style.css" />
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -38,23 +39,18 @@
     /* ── terminal frame ── */
     .terminal {
       width: 100%;
-      max-width: 480px;
-      background: var(--surface);
-      border: 3px solid var(--border);
-      box-shadow: 8px 8px 0 rgba(0,0,0,0.3);
-      padding: 36px 32px 40px;
+      max-width: 440px;
+      box-shadow:
+        8px 8px 0 rgba(0,0,0,0.4),
+        0 0 28px rgba(233,69,96,0.32);
+      padding: 28px 26px 30px;
     }
 
-    .terminal-header { text-align: center; margin-bottom: 32px; }
-    .logo {
-      font-size: clamp(1rem, 5vw, 1.5rem);
-      color: var(--mint);
-      letter-spacing: 4px;
-    }
+    .terminal-header { text-align: center; margin-bottom: 22px; }
     .subtitle {
-      font-size: 0.42rem;
-      color: var(--coral);
-      margin-top: 10px;
+      font-size: 11px;
+      color: var(--mint);
+      margin-top: 12px;
       letter-spacing: 3px;
     }
 
@@ -97,62 +93,32 @@
     }
 
     /* ── fields ── */
-    .field { margin-bottom: 20px; }
+    .field { margin-bottom: 14px; }
     .field-label {
       display: block;
-      font-size: 0.38rem;
+      font-size: 11px;
       color: var(--mint);
       letter-spacing: 2px;
       margin-bottom: 8px;
     }
-    .field-input {
-      font-family: 'Press Start 2P', monospace;
-      font-size: 0.48rem;
-      background: var(--header-bg);
-      color: var(--text);
-      border: 3px solid var(--border);
-      width: 100%;
-      padding: 12px 14px;
-      outline: none;
-      caret-color: var(--mint);
-    }
-    .field-input:focus  { border-color: var(--mint); }
-    .field-input::placeholder { color: var(--border); font-size: 0.4rem; }
 
-    /* ── submit button ── */
-    .btn-submit {
-      font-family: 'Press Start 2P', monospace;
-      font-size: 0.52rem;
+    /* full-width primary submit */
+    #btn-login {
       width: 100%;
-      padding: 14px 0;
-      background: var(--coral);
-      color: var(--header-bg);
-      border: none;
-      cursor: pointer;
-      letter-spacing: 2px;
-      box-shadow: 4px 4px 0 #7a3a28;
-      transition: transform 0.08s, box-shadow 0.08s;
-      margin-top: 8px;
-    }
-    .btn-submit:hover  { background: #edaa92; }
-    .btn-submit:active { transform: translate(2px,2px); box-shadow: 2px 2px 0 #7a3a28; }
-    .btn-submit:disabled {
-      background: var(--border);
-      color: var(--dim);
-      cursor: not-allowed;
-      box-shadow: none;
+      margin-top: 10px;
     }
 
     /* ── error panel ── */
     .error-panel {
       display: none;
-      margin-top: 20px;
+      margin-top: 18px;
       border: 3px solid var(--rose);
-      padding: 14px 16px;
+      padding: 12px 14px;
       background: var(--header-bg);
-      font-size: 0.38rem;
+      font-size: 11px;
       color: var(--rose);
-      line-height: 2;
+      line-height: 1.8;
+      letter-spacing: 1px;
       animation: slide-in 0.15s ease;
     }
     @keyframes slide-in {
@@ -163,10 +129,11 @@
     /* ── footer link ── */
     .footer-link {
       text-align: center;
-      margin-top: 24px;
-      font-size: 0.36rem;
+      margin-top: 22px;
+      font-size: 11px;
       color: var(--dim);
-      line-height: 2.5;
+      line-height: 2;
+      letter-spacing: 1px;
     }
     .footer-link a {
       color: var(--amber);
@@ -180,42 +147,44 @@
   </style>
 </head>
 <body>
+  <div class="crt-overlay"></div>
 
-  <div class="terminal">
+  <div class="terminal nes-container is-dark with-title is-centered">
+    <p class="title">LOGIN.EXE</p>
     <div class="terminal-header">
-      <div class="logo">🌿 ECOEAT</div>
+      <h1 class="logo neon-title">ECOEAT</h1>
       <div class="subtitle">LOGIN TERMINAL</div>
     </div>
 
-    <div style="font-size:0.38rem; color:var(--dim); margin-bottom:20px; letter-spacing:1px;">
+    <div style="font-size:10px; color:var(--dim); margin-bottom:14px; letter-spacing:1px;">
       C:\ECOEAT&gt; AUTH.EXE<span class="cursor-blink">█</span>
     </div>
     <hr class="divider" />
 
     <!-- Role selector -->
-    <div style="font-size:0.38rem; color:var(--mint); letter-spacing:2px; margin-bottom:12px;">SELECT ROLE:</div>
+    <div style="font-size:11px; color:var(--mint); letter-spacing:2px; margin-bottom:10px;">SELECT ROLE:</div>
     <div class="role-group" id="role-group">
       <label class="role-tile active" id="tile-student">
         <input type="radio" name="role" value="student" checked />
-        🎓 STUDENT
+        STUDENT
       </label>
       <label class="role-tile" id="tile-store">
         <input type="radio" name="role" value="store" />
-        🏪 VENDOR
+        VENDOR
       </label>
     </div>
 
     <div class="field">
       <label class="field-label" for="email">EMAIL:</label>
-      <input class="field-input" id="email" type="email" placeholder="user@campus.edu" autocomplete="email" />
+      <input class="nes-input is-dark" id="email" type="email" placeholder="user@campus.edu" autocomplete="email" />
     </div>
 
     <div class="field">
       <label class="field-label" for="password">PASSWORD:</label>
-      <input class="field-input" id="password" type="password" placeholder="••••••••" autocomplete="current-password" />
+      <input class="nes-input is-dark" id="password" type="password" placeholder="********" autocomplete="current-password" />
     </div>
 
-    <button class="btn-submit" id="btn-login">[ LOGIN ]</button>
+    <button type="button" class="nes-btn is-primary" id="btn-login">LOGIN</button>
 
     <div class="error-panel" id="error-panel"></div>
 
@@ -246,7 +215,7 @@
   }
 
   function showError(msg) {
-    errorPanel.textContent = `⚠ ${msg}`;
+    errorPanel.textContent = `[!] ${msg}`;
     errorPanel.style.display = 'block';
   }
 
@@ -265,7 +234,7 @@
     }
 
     btnLogin.disabled     = true;
-    btnLogin.textContent  = '[ AUTHENTICATING... ]';
+    btnLogin.textContent  = 'AUTHENTICATING...';
     errorPanel.style.display = 'none';
 
     try {
@@ -285,7 +254,7 @@
       showError('Network error. Try again.');
     } finally {
       btnLogin.disabled    = false;
-      btnLogin.textContent = '[ LOGIN ]';
+      btnLogin.textContent = 'LOGIN';
     }
   });
 </script>
