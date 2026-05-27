@@ -4,7 +4,7 @@ import pymysql.cursors
 from flask import Flask, jsonify, request, send_from_directory
 from dotenv import load_dotenv
 
-load_dotenv()
+load_dotenv(override=True)
 
 app = Flask(__name__, static_folder="static")
 

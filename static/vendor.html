@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>EcoEat – Vendor Terminal</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://unpkg.com/nes.css@2.3.0/css/nes.min.css" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:      #0d0d0d;
+      --surface: #0a130a;
+      --green:   #39ff14;
+      --pink:    #ff2d78;
+      --yellow:  #ffe600;
+      --dim:     #2a4a2a;
+      --text:    #c8ffc8;
+    }
+
+    body {
+      font-family: 'Press Start 2P', monospace;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 40px 16px 60px;
+    }
+
+    /* ── top nav ── */
+    .back-link {
+      align-self: flex-start;
+      font-size: 0.4rem;
+      color: var(--dim);
+      text-decoration: none;
+      margin-bottom: 40px;
+      letter-spacing: 2px;
+      border-bottom: 2px solid var(--dim);
+    }
+    .back-link:hover { color: var(--text); border-color: var(--text); }
+
+    /* ── terminal frame ── */
+    .terminal {
+      width: 100%;
+      max-width: 540px;
+      background: var(--surface);
+      border: 4px solid var(--green);
+      box-shadow: 0 0 40px rgba(57,255,20,0.2), 8px 8px 0 var(--dim);
+      padding: 36px 32px 40px;
+    }
+
+    .terminal-header {
+      text-align: center;
+      margin-bottom: 36px;
+    }
+    .terminal-header .logo {
+      font-size: clamp(1rem, 5vw, 1.6rem);
+      color: var(--green);
+      text-shadow: 0 0 12px var(--green), 0 0 30px var(--green);
+      letter-spacing: 4px;
+    }
+    .terminal-header .subtitle {
+      font-size: 0.42rem;
+      color: var(--pink);
+      text-shadow: 0 0 6px var(--pink);
+      margin-top: 10px;
+      letter-spacing: 3px;
+    }
+    .divider {
+      border: none;
+      border-top: 2px dashed var(--dim);
+      margin: 24px 0;
+    }
+
+    /* ── prompt lines ── */
+    .prompt-line {
+      font-size: 0.42rem;
+      color: var(--dim);
+      margin-bottom: 8px;
+      letter-spacing: 1px;
+    }
+    .prompt-line .cursor-blink {
+      animation: blink 1s step-end infinite;
+      color: var(--green);
+    }
+    @keyframes blink { 50% { opacity: 0; } }
+
+    /* ── label ── */
+    label {
+      display: block;
+      font-size: 0.42rem;
+      color: var(--green);
+      letter-spacing: 2px;
+      margin-bottom: 12px;
+    }
+
+    /* ── code input ── */
+    .code-input-wrap {
+      position: relative;
+      margin-bottom: 24px;
+    }
+    #pick-code {
+      font-family: 'Press Start 2P', monospace;
+      font-size: 1.1rem;
+      background: #000;
+      color: var(--yellow);
+      border: 3px solid var(--green);
+      width: 100%;
+      padding: 14px 16px;
+      letter-spacing: 8px;
+      text-transform: uppercase;
+      caret-color: var(--green);
+      outline: none;
+      box-shadow: inset 0 0 10px rgba(57,255,20,0.1);
+    }
+    #pick-code:focus {
+      border-color: var(--yellow);
+      box-shadow: inset 0 0 10px rgba(255,230,0,0.15), 0 0 12px rgba(255,230,0,0.2);
+    }
+    #pick-code::placeholder {
+      color: #2a3a1a;
+      letter-spacing: 6px;
+    }
+    .char-count {
+      font-size: 0.35rem;
+      color: var(--dim);
+      text-align: right;
+      margin-top: 6px;
+    }
+    .char-count.full { color: var(--green); }
+
+    /* ── verify button ── */
+    #btn-verify {
+      font-family: 'Press Start 2P', monospace;
+      font-size: 0.55rem;
+      width: 100%;
+      padding: 14px 0;
+      background: var(--green);
+      color: #000;
+      border: none;
+      cursor: pointer;
+      letter-spacing: 3px;
+      box-shadow: 4px 4px 0 var(--dim);
+      transition: transform 0.08s, box-shadow 0.08s;
+    }
+    #btn-verify:hover  { background: #80ff60; }
+    #btn-verify:active { transform: translate(2px,2px); box-shadow: 2px 2px 0 var(--dim); }
+    #btn-verify:disabled {
+      background: #1a2a1a;
+      color: var(--dim);
+      cursor: not-allowed;
+      box-shadow: none;
+    }
+
+    /* ── result panel ── */
+    #result-panel {
+      display: none;
+      margin-top: 28px;
+      border: 3px solid var(--green);
+      padding: 20px 18px;
+      background: #000;
+      animation: slide-in 0.2s ease;
+    }
+    #result-panel.error { border-color: var(--pink); }
+    @keyframes slide-in {
+      from { opacity: 0; transform: translateY(8px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .result-icon { font-size: 1.5rem; margin-bottom: 12px; display: block; }
+    .result-status {
+      font-size: 0.6rem;
+      letter-spacing: 2px;
+      color: var(--green);
+      text-shadow: 0 0 8px var(--green);
+      margin-bottom: 10px;
+    }
+    #result-panel.error .result-status {
+      color: var(--pink);
+      text-shadow: 0 0 8px var(--pink);
+    }
+    .result-detail {
+      font-size: 0.38rem;
+      color: var(--dim);
+      line-height: 2.2;
+    }
+
+    /* ── scan history ── */
+    .history-title {
+      font-size: 0.4rem;
+      color: var(--dim);
+      letter-spacing: 2px;
+      margin: 32px 0 12px;
+      border-left: 3px solid var(--dim);
+      padding-left: 10px;
+    }
+    #history-list {
+      list-style: none;
+      max-height: 180px;
+      overflow-y: auto;
+    }
+    #history-list li {
+      font-size: 0.35rem;
+      padding: 6px 0;
+      border-bottom: 1px solid #1a2a1a;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      color: var(--dim);
+    }
+    #history-list li .h-code { color: var(--text); letter-spacing: 2px; }
+    #history-list li .h-ok   { color: var(--green); }
+    #history-list li .h-err  { color: var(--pink);  }
+  </style>
+</head>
+<body>
+
+  <a class="back-link" href="/">◀ BACK TO MARKET</a>
+
+  <div class="terminal">
+    <div class="terminal-header">
+      <div class="logo">🌿 ECOEAT</div>
+      <div class="subtitle">VENDOR TERMINAL v1.0</div>
+    </div>
+
+    <div class="prompt-line">C:\ECOEAT\VENDOR&gt; CLAIM_ORDER.EXE<span class="cursor-blink">█</span></div>
+    <hr class="divider" />
+
+    <label for="pick-code">ENTER PICK-UP CODE:</label>
+    <div class="code-input-wrap">
+      <input
+        id="pick-code"
+        type="text"
+        maxlength="6"
+        placeholder="XXXXXX"
+        autocomplete="off"
+        spellcheck="false"
+      />
+      <div class="char-count" id="char-count">0 / 6</div>
+    </div>
+
+    <button id="btn-verify" disabled>[ VERIFY &amp; CLAIM ]</button>
+
+    <div id="result-panel">
+      <span class="result-icon" id="result-icon"></span>
+      <div class="result-status" id="result-status"></div>
+      <div class="result-detail" id="result-detail"></div>
+    </div>
+
+    <div id="history-section" style="display:none">
+      <div class="history-title">// SCAN LOG</div>
+      <ul id="history-list"></ul>
+    </div>
+  </div>
+
+<script>
+  const input     = document.getElementById('pick-code');
+  const btnVerify = document.getElementById('btn-verify');
+  const charCount = document.getElementById('char-count');
+  const panel     = document.getElementById('result-panel');
+  const histList  = document.getElementById('history-list');
+  const histSec   = document.getElementById('history-section');
+
+  input.addEventListener('input', () => {
+    input.value = input.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
+    const len = input.value.length;
+    charCount.textContent = `${len} / 6`;
+    charCount.classList.toggle('full', len === 6);
+    btnVerify.disabled = len !== 6;
+    panel.style.display = 'none';
+  });
+
+  input.addEventListener('keydown', e => {
+    if (e.key === 'Enter' && !btnVerify.disabled) btnVerify.click();
+  });
+
+  function showResult({ success, icon, status, detail }) {
+    panel.className = success ? '' : 'error';
+    panel.style.display = 'block';
+    document.getElementById('result-icon').textContent   = icon;
+    document.getElementById('result-status').textContent = status;
+    document.getElementById('result-detail').textContent = detail;
+  }
+
+  function addHistory(code, success, label) {
+    histSec.style.display = 'block';
+    const li = document.createElement('li');
+    const now = new Date().toLocaleTimeString('en-GB', { hour12: false });
+    li.innerHTML = `
+      <span>[${now}] <span class="h-code">${code}</span></span>
+      <span class="${success ? 'h-ok' : 'h-err'}">${label}</span>
+    `;
+    histList.prepend(li);
+  }
+
+  btnVerify.addEventListener('click', async () => {
+    const code = input.value.trim();
+    if (code.length !== 6) return;
+
+    btnVerify.disabled = true;
+    btnVerify.textContent = '[ SCANNING... ]';
+
+    try {
+      const res  = await fetch('/api/claim', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ pickUpCode: code }),
+      });
+      const data = await res.json();
+
+      if (res.ok) {
+        showResult({
+          success: true,
+          icon:    '✅',
+          status:  'CLAIMED!',
+          detail:  `Order #${data.order_id} marked as claimed.\nCustomer may collect their box.`,
+        });
+        addHistory(code, true, '✔ CLAIMED');
+        input.value = '';
+        charCount.textContent = '0 / 6';
+        charCount.classList.remove('full');
+      } else {
+        showResult({
+          success: false,
+          icon:    '❌',
+          status:  'CLAIM FAILED',
+          detail:  data.error || 'Unknown error.',
+        });
+        addHistory(code, false, '✘ FAILED');
+      }
+    } catch (err) {
+      showResult({
+        success: false,
+        icon:    '⚠️',
+        status:  'NETWORK ERROR',
+        detail:  err.message,
+      });
+      addHistory(code, false, '✘ NET ERR');
+    } finally {
+      btnVerify.disabled = false;
+      btnVerify.textContent = '[ VERIFY & CLAIM ]';
+    }
+  });
+</script>
+</body>
+</html>

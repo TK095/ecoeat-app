@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>EcoEat – Blind Box Market</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://unpkg.com/nes.css@2.3.0/css/nes.min.css" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:        #0d0d0d;
+      --surface:   #111820;
+      --border:    #1a2a1a;
+      --green:     #39ff14;
+      --pink:      #ff2d78;
+      --yellow:    #ffe600;
+      --dim:       #4a7a4a;
+      --text:      #c8ffc8;
+    }
+
+    body {
+      font-family: 'Press Start 2P', monospace;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      padding: 0 0 60px;
+    }
+
+    /* ── header ── */
+    header {
+      background: #000;
+      border-bottom: 4px solid var(--green);
+      padding: 24px 16px 20px;
+      text-align: center;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      box-shadow: 0 0 24px var(--green);
+    }
+    header h1 {
+      font-size: clamp(1.1rem, 4vw, 2rem);
+      color: var(--green);
+      text-shadow: 0 0 10px var(--green), 0 0 30px var(--green);
+      letter-spacing: 4px;
+    }
+    header p {
+      font-size: 0.45rem;
+      color: var(--dim);
+      margin-top: 10px;
+      letter-spacing: 2px;
+    }
+
+    /* ── nav link to vendor ── */
+    .vendor-link {
+      display: inline-block;
+      margin-top: 12px;
+      font-size: 0.45rem;
+      color: var(--pink);
+      text-decoration: none;
+      border-bottom: 2px solid var(--pink);
+      text-shadow: 0 0 6px var(--pink);
+    }
+    .vendor-link:hover { opacity: 0.75; }
+
+    /* ── main grid ── */
+    main {
+      max-width: 1100px;
+      margin: 40px auto;
+      padding: 0 16px;
+    }
+
+    .section-title {
+      font-size: 0.6rem;
+      color: var(--pink);
+      text-shadow: 0 0 8px var(--pink);
+      letter-spacing: 3px;
+      margin-bottom: 24px;
+      border-left: 4px solid var(--pink);
+      padding-left: 12px;
+    }
+
+    #box-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 24px;
+    }
+
+    /* ── individual card ── */
+    .box-card {
+      background: var(--surface);
+      border: 4px solid var(--green);
+      padding: 20px 18px 18px;
+      position: relative;
+      image-rendering: pixelated;
+      box-shadow: 4px 4px 0 var(--dim), 0 0 12px rgba(57,255,20,0.15);
+      transition: transform 0.1s, box-shadow 0.1s;
+    }
+    .box-card:hover {
+      transform: translate(-2px, -2px);
+      box-shadow: 6px 6px 0 var(--dim), 0 0 20px rgba(57,255,20,0.3);
+    }
+
+    .card-store {
+      font-size: 0.4rem;
+      color: var(--pink);
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      margin-bottom: 8px;
+      text-shadow: 0 0 5px var(--pink);
+    }
+    .card-name {
+      font-size: 0.55rem;
+      color: var(--green);
+      line-height: 1.6;
+      margin-bottom: 14px;
+    }
+
+    .card-prices {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 10px;
+    }
+    .price-original {
+      font-size: 0.45rem;
+      color: #555;
+      text-decoration: line-through;
+    }
+    .price-flash {
+      font-size: 0.75rem;
+      color: var(--yellow);
+      text-shadow: 0 0 8px var(--yellow);
+    }
+
+    .card-meta {
+      font-size: 0.38rem;
+      color: var(--dim);
+      margin-bottom: 16px;
+      line-height: 2;
+    }
+    .card-meta span { color: var(--text); }
+
+    .stock-badge {
+      display: inline-block;
+      font-size: 0.38rem;
+      padding: 3px 8px;
+      border: 2px solid var(--green);
+      color: var(--green);
+      margin-bottom: 16px;
+    }
+
+    .btn-reserve {
+      width: 100%;
+      font-family: 'Press Start 2P', monospace;
+      font-size: 0.5rem;
+      background: var(--pink);
+      color: #000;
+      border: none;
+      padding: 10px 0;
+      cursor: pointer;
+      letter-spacing: 2px;
+      box-shadow: 4px 4px 0 #7a0030;
+      transition: transform 0.08s, box-shadow 0.08s;
+    }
+    .btn-reserve:hover  { background: #ff5fa0; }
+    .btn-reserve:active { transform: translate(2px,2px); box-shadow: 2px 2px 0 #7a0030; }
+    .btn-reserve:disabled {
+      background: #333;
+      color: #555;
+      cursor: not-allowed;
+      box-shadow: none;
+    }
+
+    /* ── loading / empty ── */
+    #status-msg {
+      text-align: center;
+      font-size: 0.5rem;
+      color: var(--dim);
+      margin-top: 60px;
+      line-height: 2.5;
+    }
+    #status-msg .blink {
+      animation: blink 1s step-end infinite;
+    }
+    @keyframes blink { 50% { opacity: 0; } }
+
+    /* ── modal overlay ── */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.85);
+      z-index: 200;
+      align-items: center;
+      justify-content: center;
+    }
+    .modal-overlay.open { display: flex; }
+
+    .modal-box {
+      background: #000;
+      border: 4px solid var(--green);
+      padding: 32px 28px;
+      max-width: 420px;
+      width: 90%;
+      text-align: center;
+      box-shadow: 0 0 40px var(--green), 8px 8px 0 var(--dim);
+      animation: pop-in 0.15s ease;
+    }
+    .modal-box.error {
+      border-color: var(--pink);
+      box-shadow: 0 0 40px var(--pink), 8px 8px 0 #7a0030;
+    }
+    @keyframes pop-in {
+      from { transform: scale(0.85); opacity: 0; }
+      to   { transform: scale(1);    opacity: 1; }
+    }
+
+    .modal-icon { font-size: 2rem; margin-bottom: 16px; }
+    .modal-title {
+      font-size: 0.65rem;
+      color: var(--green);
+      text-shadow: 0 0 8px var(--green);
+      margin-bottom: 18px;
+      letter-spacing: 2px;
+    }
+    .modal-box.error .modal-title {
+      color: var(--pink);
+      text-shadow: 0 0 8px var(--pink);
+    }
+
+    .pickup-code {
+      display: inline-block;
+      font-size: 1.4rem;
+      color: var(--yellow);
+      text-shadow: 0 0 12px var(--yellow);
+      letter-spacing: 8px;
+      border: 3px dashed var(--yellow);
+      padding: 12px 20px;
+      margin: 12px 0 20px;
+    }
+
+    .modal-msg {
+      font-size: 0.4rem;
+      color: var(--dim);
+      line-height: 2;
+      margin-bottom: 20px;
+    }
+
+    .btn-close {
+      font-family: 'Press Start 2P', monospace;
+      font-size: 0.45rem;
+      background: transparent;
+      color: var(--text);
+      border: 3px solid var(--text);
+      padding: 8px 20px;
+      cursor: pointer;
+      letter-spacing: 2px;
+    }
+    .btn-close:hover { background: var(--text); color: #000; }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>🌿 ECOEAT</h1>
+    <p>CAMPUS SURPLUS FOOD RESCUE PLATFORM</p>
+    <a class="vendor-link" href="/vendor">▶ VENDOR PORTAL</a>
+  </header>
+
+  <main>
+    <p class="section-title">// AVAILABLE BLIND BOXES</p>
+    <div id="box-grid"></div>
+    <div id="status-msg">
+      <p class="blink">▓▓▓ LOADING BOXES... ▓▓▓</p>
+    </div>
+  </main>
+
+  <!-- Modal -->
+  <div class="modal-overlay" id="modal" role="dialog" aria-modal="true">
+    <div class="modal-box" id="modal-box">
+      <div class="modal-icon" id="modal-icon"></div>
+      <div class="modal-title" id="modal-title"></div>
+      <div id="modal-code-wrap" style="display:none">
+        <div class="pickup-code" id="modal-code"></div>
+      </div>
+      <div class="modal-msg" id="modal-msg"></div>
+      <button class="btn-close" id="modal-close">[ OK ]</button>
+    </div>
+  </div>
+
+<script>
+  const SID = 1;
+
+  const grid      = document.getElementById('box-grid');
+  const statusMsg = document.getElementById('status-msg');
+  const modal     = document.getElementById('modal');
+  const modalBox  = document.getElementById('modal-box');
+
+  function showModal({ success, title, code, msg }) {
+    modalBox.classList.toggle('error', !success);
+    document.getElementById('modal-icon').textContent  = success ? '🎉' : '⚠️';
+    document.getElementById('modal-title').textContent = title;
+    document.getElementById('modal-msg').textContent   = msg;
+
+    const codeWrap = document.getElementById('modal-code-wrap');
+    if (code) {
+      codeWrap.style.display = 'block';
+      document.getElementById('modal-code').textContent = code;
+    } else {
+      codeWrap.style.display = 'none';
+    }
+    modal.classList.add('open');
+  }
+
+  document.getElementById('modal-close').addEventListener('click', () => {
+    modal.classList.remove('open');
+  });
+  modal.addEventListener('click', e => {
+    if (e.target === modal) modal.classList.remove('open');
+  });
+
+  function formatTime(t) {
+    if (!t) return '—';
+    const parts = t.split(':');
+    let h = parseInt(parts[0], 10);
+    const m = parts[1];
+    const ampm = h >= 12 ? 'PM' : 'AM';
+    h = h % 12 || 12;
+    return `${h}:${m} ${ampm}`;
+  }
+
+  function buildCard(box) {
+    const card = document.createElement('div');
+    card.className = 'box-card';
+    card.innerHTML = `
+      <div class="card-store">${box.storeName}</div>
+      <div class="card-name">${box.name}</div>
+      <div class="card-prices">
+        <span class="price-original">RM${parseFloat(box.originalPrice).toFixed(2)}</span>
+        <span class="price-flash">RM${parseFloat(box.flashPrice).toFixed(2)}</span>
+      </div>
+      <div class="card-meta">
+        PICKUP BY: <span>${formatTime(box.pickUpDeadline)}</span><br>
+        LOCATION: <span>${box.location}</span><br>
+        CATEGORY: <span>${box.category}</span>
+      </div>
+      <div class="stock-badge">STOCK: ${box.stockQuantity}</div>
+      <button class="btn-reserve" data-box-id="${box.box_ID}" data-flash="${box.flashPrice}">
+        [ RESERVE ]
+      </button>
+    `;
+    return card;
+  }
+
+  async function loadBoxes() {
+    try {
+      const res  = await fetch('/api/boxes');
+      const data = await res.json();
+      statusMsg.style.display = 'none';
+
+      if (!data.length) {
+        statusMsg.style.display = 'block';
+        statusMsg.innerHTML = '<p>NO BOXES AVAILABLE RIGHT NOW.<br>CHECK BACK LATER!</p>';
+        return;
+      }
+
+      data.forEach(box => grid.appendChild(buildCard(box)));
+
+    } catch (err) {
+      statusMsg.innerHTML = `<p style="color:var(--pink)">CONNECTION ERROR.<br>${err.message}</p>`;
+    }
+  }
+
+  async function reserveBox(boxId, flashPrice, btn) {
+    btn.disabled = true;
+    btn.textContent = '[ WAIT... ]';
+    try {
+      const res  = await fetch('/api/order', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ SID, box_ID: boxId }),
+      });
+      const data = await res.json();
+
+      if (res.ok) {
+        showModal({
+          success: true,
+          title:   'ORDER PLACED!',
+          code:    data.pickUpCode,
+          msg:     `RM${parseFloat(flashPrice).toFixed(2)} deducted from wallet.\nShow this code at pick-up.`,
+        });
+        // Reload boxes to reflect updated stock
+        grid.innerHTML = '';
+        loadBoxes();
+      } else {
+        showModal({
+          success: false,
+          title:   'ORDER FAILED',
+          code:    null,
+          msg:     data.error || 'Unknown error occurred.',
+        });
+        btn.disabled = false;
+        btn.textContent = '[ RESERVE ]';
+      }
+    } catch (err) {
+      showModal({ success: false, title: 'NETWORK ERROR', code: null, msg: err.message });
+      btn.disabled = false;
+      btn.textContent = '[ RESERVE ]';
+    }
+  }
+
+  grid.addEventListener('click', e => {
+    const btn = e.target.closest('.btn-reserve');
+    if (!btn || btn.disabled) return;
+    reserveBox(parseInt(btn.dataset.boxId), btn.dataset.flash, btn);
+  });
+
+  loadBoxes();
+</script>
+</body>
+</html>
