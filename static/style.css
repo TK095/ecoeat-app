@@ -1,0 +1,90 @@
+/* ============================================================
+   EcoEat — Midnight Arcade Café  |  Global Theme
+   Loaded AFTER each page's inline <style>, so these :root
+   variables override the per-page defaults via cascade order.
+   ============================================================ */
+
+/* ── Midnight Arcade palette ─────────────────────────────── */
+:root {
+  --bg:        #1a1a2e;   /* deep purple-navy page bg          */
+  --surface:   #16213e;   /* dark navy card / panel surface     */
+  --header-bg: #0f3460;   /* rich blue header / modal bg        */
+  --border:    #533483;   /* muted purple border                */
+  --mint:      #00d4ff;   /* neon cyan  — success / eco         */
+  --coral:     #e94560;   /* neon pink  — actions / accents     */
+  --amber:     #f5a623;   /* warm amber — prices / codes        */
+  --rose:      #ff4757;   /* hot red    — errors / cancel       */
+  --dim:       #6a5acd;   /* muted indigo — secondary text      */
+  --text:      #e0e0ff;   /* soft lavender-white — body text    */
+}
+
+/* ── Base body setup ─────────────────────────────────────── */
+body {
+  background-color: var(--bg);
+  position: relative;
+  isolation: isolate;        /* new stacking context for z-index */
+  overflow-x: hidden;
+}
+
+/* ── Radial glow vignette (sits behind everything) ───────── */
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -2;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse 80% 40% at 50% 0%,
+      rgba(233, 69,  96,  0.14) 0%, transparent 70%),
+    radial-gradient(ellipse 80% 35% at 50% 100%,
+      rgba(0,   212, 255, 0.12) 0%, transparent 65%);
+}
+
+/* ── Animated synthwave perspective grid floor ───────────── */
+body::before {
+  content: '';
+  position: fixed;
+  left: -120%;
+  right: -120%;
+  bottom: 0;
+  height: 52vh;
+  z-index: -1;
+  pointer-events: none;
+  background-image:
+    linear-gradient(rgba(233, 69, 96, 0.40) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(233, 69, 96, 0.40) 1px, transparent 1px);
+  background-size: 72px 72px;
+  transform: perspective(360px) rotateX(83deg);
+  transform-origin: center bottom;
+  animation: grid-scroll 2.8s linear infinite;
+  /* fade the grid out toward the top */
+  -webkit-mask-image: linear-gradient(to top, rgba(0,0,0,0.85) 0%, transparent 100%);
+          mask-image: linear-gradient(to top, rgba(0,0,0,0.85) 0%, transparent 100%);
+}
+
+@keyframes grid-scroll {
+  from { background-position: 0 0; }
+  to   { background-position: 0 72px; }
+}
+
+/* ── CRT scanline overlay ────────────────────────────────── */
+.crt-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9998;
+  pointer-events: none;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 3px,
+    rgba(0, 0, 0, 0.06) 3px,
+    rgba(0, 0, 0, 0.06) 4px
+  );
+}
+
+/* ── Marketplace card grid ───────────────────────────────── */
+.marketplace-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 20px;
+}

@@ -351,8 +351,10 @@
     }
     .btn-close:hover { background: var(--border); color: var(--header-bg); }
   </style>
+  <link rel="stylesheet" href="/static/style.css" />
 </head>
 <body>
+  <div class="crt-overlay"></div>
 
   <header>
     <h1>🌿 ECOEAT</h1>
@@ -380,7 +382,7 @@
 
   <main>
     <p class="section-title">// AVAILABLE BLIND BOXES</p>
-    <div id="box-grid"></div>
+    <div id="box-grid" class="marketplace-grid"></div>
     <div id="status-msg">
       <p class="blink">▓▓▓ LOADING BOXES... ▓▓▓</p>
     </div>
