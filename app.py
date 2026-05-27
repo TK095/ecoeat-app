@@ -230,6 +230,116 @@ def get_boxes():
         conn.close()
 
 
+# ── GET /api/vendor/boxes ────────────────────────────────────────────────────
+
+@app.route("/api/vendor/boxes", methods=["GET"])
+def vendor_get_boxes():
+    store_id, err = login_required(role="store")
+    if err:
+        return err
+
+    conn = get_db()
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                """SELECT box_ID, name, originalPrice, flashPrice,
+                          stockQuantity, pickUpDeadline
+                   FROM Blind_Box
+                   WHERE store_ID = %s
+                   ORDER BY box_ID""",
+                (store_id,),
+            )
+            rows = cur.fetchall()
+        for row in rows:
+            if row.get("pickUpDeadline") is not None:
+                row["pickUpDeadline"] = str(row["pickUpDeadline"])
+        return jsonify(rows)
+    except Exception as e:
+        msg = e.args[1] if len(e.args) > 1 else str(e)
+        return jsonify({"error": msg}), 500
+    finally:
+        conn.close()
+
+
+# ── POST /api/vendor/boxes ────────────────────────────────────────────────────
+
+@app.route("/api/vendor/boxes", methods=["POST"])
+def vendor_add_box():
+    store_id, err = login_required(role="store")
+    if err:
+        return err
+
+    data = request.get_json(force=True)
+    name            = data.get("name", "").strip()
+    original_price  = data.get("originalPrice")
+    flash_price     = data.get("flashPrice")
+    stock_quantity  = data.get("stockQuantity", 0)
+    pick_up_deadline = data.get("pickUpDeadline", "").strip()
+
+    if not all([name, original_price, flash_price, pick_up_deadline]):
+        return jsonify({"error": "name, originalPrice, flashPrice, and pickUpDeadline are required."}), 400
+
+    conn = get_db()
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                """INSERT INTO Blind_Box
+                       (store_ID, name, originalPrice, flashPrice, stockQuantity, pickUpDeadline)
+                   VALUES (%s, %s, %s, %s, %s, %s)""",
+                (store_id, name, original_price, flash_price, stock_quantity, pick_up_deadline),
+            )
+            new_id = cur.lastrowid
+        conn.commit()
+        return jsonify({"message": "Blind box created.", "box_ID": new_id}), 201
+
+    except pymysql.err.IntegrityError as e:
+        conn.rollback()
+        return jsonify({"error": str(e.args[1])}), 409
+    except Exception as e:
+        conn.rollback()
+        msg = e.args[1] if len(e.args) > 1 else str(e)
+        return jsonify({"error": msg}), 500
+    finally:
+        conn.close()
+
+
+# ── DELETE /api/vendor/boxes/<box_id> ────────────────────────────────────────
+
+@app.route("/api/vendor/boxes/<int:box_id>", methods=["DELETE"])
+def vendor_delete_box(box_id):
+    store_id, err = login_required(role="store")
+    if err:
+        return err
+
+    conn = get_db()
+    try:
+        with conn.cursor() as cur:
+            # Verify the box belongs to this store before deleting
+            cur.execute(
+                "SELECT box_ID FROM Blind_Box WHERE box_ID = %s AND store_ID = %s",
+                (box_id, store_id),
+            )
+            if not cur.fetchone():
+                return jsonify({"error": "Box not found or does not belong to your store."}), 404
+
+            cur.execute(
+                "DELETE FROM Blind_Box WHERE box_ID = %s AND store_ID = %s",
+                (box_id, store_id),
+            )
+        conn.commit()
+        return jsonify({"message": f"Blind box {box_id} deleted."})
+
+    except pymysql.err.IntegrityError as e:
+        conn.rollback()
+        return jsonify({"error": "Cannot delete: this box has existing orders."}), 409
+    except Exception as e:
+        conn.rollback()
+        msg = e.args[1] if len(e.args) > 1 else str(e)
+        return jsonify({"error": msg}), 500
+    finally:
+        conn.close()
+
+
 # ── POST /api/order ──────────────────────────────────────────────────────────
 
 @app.route("/api/order", methods=["POST"])

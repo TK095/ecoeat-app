@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>EcoEat – Vendor Terminal</title>
+  <title>EcoEat – Vendor Dashboard</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="https://unpkg.com/nes.css@2.3.0/css/nes.min.css" />
@@ -28,32 +28,35 @@
       background: var(--bg);
       color: var(--text);
       min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      padding: 40px 16px 60px;
+      padding: 0 0 60px;
     }
 
-    /* ── top nav ── */
-    .back-link {
-      align-self: flex-start;
-      font-size: 0.4rem;
-      color: var(--dim);
-      text-decoration: none;
-      margin-bottom: 40px;
-      letter-spacing: 2px;
-      border-bottom: 2px solid var(--dim);
-    }
-    .back-link:hover { color: var(--text); border-color: var(--text); }
-
-    /* ── top bar with store name + logout ── */
+    /* ── top bar ── */
     .top-bar {
+      background: var(--header-bg);
+      border-bottom: 3px solid var(--border);
+      padding: 16px 24px;
       display: flex;
       justify-content: space-between;
       align-items: center;
-      width: 100%;
-      max-width: 540px;
-      margin-bottom: 28px;
+      box-shadow: 0 3px 12px rgba(0,0,0,0.35);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .top-bar-left { display: flex; align-items: center; gap: 20px; }
+    .back-link {
+      font-size: 0.36rem;
+      color: var(--dim);
+      text-decoration: none;
+      border-bottom: 2px solid var(--dim);
+      letter-spacing: 1px;
+    }
+    .back-link:hover { color: var(--text); border-color: var(--text); }
+    .store-name-label {
+      font-size: 0.4rem;
+      color: var(--mint);
+      letter-spacing: 2px;
     }
     .btn-logout {
       font-family: 'Press Start 2P', monospace;
@@ -61,174 +64,239 @@
       background: transparent;
       color: var(--rose);
       border: 2px solid var(--rose);
-      padding: 5px 10px;
+      padding: 6px 12px;
       cursor: pointer;
       letter-spacing: 1px;
     }
     .btn-logout:hover { background: var(--rose); color: var(--header-bg); }
-    .store-name-label {
-      font-size: 0.36rem;
-      color: var(--mint);
-      letter-spacing: 2px;
-    }
 
-    /* ── terminal frame ── */
-    .terminal {
-      width: 100%;
-      max-width: 540px;
-      background: var(--surface);
-      border: 3px solid var(--border);
-      box-shadow: 8px 8px 0 rgba(0,0,0,0.3);
-      padding: 36px 32px 40px;
-    }
-
-    .terminal-header {
+    /* ── page heading ── */
+    .page-heading {
       text-align: center;
-      margin-bottom: 36px;
+      padding: 32px 16px 28px;
     }
-    .terminal-header .logo {
-      font-size: clamp(1rem, 5vw, 1.6rem);
+    .page-heading h1 {
+      font-size: clamp(1rem, 4vw, 1.6rem);
       color: var(--mint);
       letter-spacing: 4px;
     }
-    .terminal-header .subtitle {
-      font-size: 0.42rem;
-      color: var(--coral);
+    .page-heading p {
+      font-size: 0.4rem;
+      color: var(--dim);
       margin-top: 10px;
       letter-spacing: 3px;
     }
+
+    /* ── dashboard grid ── */
+    .dashboard {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 0 20px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      grid-template-areas:
+        "claim  add"
+        "inv    inv";
+      gap: 24px;
+    }
+    @media (max-width: 720px) {
+      .dashboard {
+        grid-template-columns: 1fr;
+        grid-template-areas: "claim" "add" "inv";
+      }
+    }
+    .section-claim     { grid-area: claim; }
+    .section-add       { grid-area: add; }
+    .section-inventory { grid-area: inv; }
+
+    /* ── panel shell ── */
+    .panel {
+      background: var(--surface);
+      border: 3px solid var(--border);
+      box-shadow: 6px 6px 0 rgba(0,0,0,0.28);
+      padding: 28px 26px 30px;
+    }
+
+    .section-title {
+      font-size: 0.5rem;
+      letter-spacing: 3px;
+      margin-bottom: 22px;
+      padding-left: 12px;
+      border-left: 4px solid var(--mint);
+      color: var(--mint);
+    }
+    .section-title.coral  { color: var(--coral);  border-left-color: var(--coral); }
+    .section-title.amber  { color: var(--amber);  border-left-color: var(--amber); }
+
+    .prompt-line {
+      font-size: 0.38rem;
+      color: var(--dim);
+      margin-bottom: 18px;
+      letter-spacing: 1px;
+    }
+    .cursor-blink { animation: blink 1s step-end infinite; color: var(--mint); }
+    @keyframes blink { 50% { opacity: 0; } }
+
     .divider {
       border: none;
       border-top: 2px dashed var(--border);
-      margin: 24px 0;
+      margin: 20px 0;
     }
 
-    /* ── prompt lines ── */
-    .prompt-line {
-      font-size: 0.42rem;
-      color: var(--dim);
-      margin-bottom: 8px;
-      letter-spacing: 1px;
-    }
-    .prompt-line .cursor-blink {
-      animation: blink 1s step-end infinite;
-      color: var(--mint);
-    }
-    @keyframes blink { 50% { opacity: 0; } }
-
-    /* ── label ── */
-    label {
+    /* ── shared field styles ── */
+    .field { margin-bottom: 16px; }
+    .field-label {
       display: block;
-      font-size: 0.42rem;
+      font-size: 0.35rem;
       color: var(--mint);
       letter-spacing: 2px;
-      margin-bottom: 12px;
+      margin-bottom: 7px;
+    }
+    .field-input {
+      font-family: 'Press Start 2P', monospace;
+      font-size: 0.42rem;
+      background: var(--header-bg);
+      color: var(--text);
+      border: 3px solid var(--border);
+      width: 100%;
+      padding: 10px 12px;
+      outline: none;
+      caret-color: var(--mint);
+    }
+    .field-input:focus  { border-color: var(--mint); }
+    .field-input::placeholder { color: var(--border); font-size: 0.36rem; }
+    /* time input color fix */
+    input[type="time"].field-input { color: var(--amber); }
+    input[type="number"].field-input { color: var(--amber); }
+
+    /* 2-col form row */
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
     }
 
-    /* ── code input ── */
-    .code-input-wrap {
-      position: relative;
-      margin-bottom: 24px;
-    }
+    /* ── claim section specifics ── */
     #pick-code {
       font-family: 'Press Start 2P', monospace;
-      font-size: 1.1rem;
+      font-size: 1rem;
       background: var(--header-bg);
       color: var(--amber);
       border: 3px solid var(--border);
       width: 100%;
-      padding: 14px 16px;
+      padding: 13px 14px;
       letter-spacing: 8px;
       text-transform: uppercase;
       caret-color: var(--mint);
       outline: none;
+      margin-bottom: 6px;
     }
-    #pick-code:focus {
-      border-color: var(--mint);
-    }
-    #pick-code::placeholder {
-      color: var(--border);
-      letter-spacing: 6px;
-    }
+    #pick-code:focus { border-color: var(--mint); }
+    #pick-code::placeholder { color: var(--border); letter-spacing: 6px; }
     .char-count {
-      font-size: 0.35rem;
+      font-size: 0.32rem;
       color: var(--dim);
       text-align: right;
-      margin-top: 6px;
+      margin-bottom: 16px;
     }
     .char-count.full { color: var(--mint); }
 
-    /* ── verify button ── */
-    #btn-verify {
+    /* ── buttons ── */
+    .btn-mint, .btn-coral, .btn-rose {
       font-family: 'Press Start 2P', monospace;
-      font-size: 0.55rem;
-      width: 100%;
-      padding: 14px 0;
-      background: var(--mint);
-      color: var(--header-bg);
       border: none;
       cursor: pointer;
-      letter-spacing: 3px;
-      box-shadow: 4px 4px 0 #3a7a63;
+      letter-spacing: 2px;
       transition: transform 0.08s, box-shadow 0.08s;
     }
-    #btn-verify:hover  { background: #9edfc8; }
-    #btn-verify:active { transform: translate(2px,2px); box-shadow: 2px 2px 0 #3a7a63; }
-    #btn-verify:disabled {
-      background: var(--border);
-      color: var(--dim);
-      cursor: not-allowed;
-      box-shadow: none;
+    .btn-mint {
+      font-size: 0.48rem;
+      width: 100%;
+      padding: 13px 0;
+      background: var(--mint);
+      color: var(--header-bg);
+      box-shadow: 4px 4px 0 #3a7a63;
     }
+    .btn-mint:hover  { background: #9edfc8; }
+    .btn-mint:active { transform: translate(2px,2px); box-shadow: 2px 2px 0 #3a7a63; }
+    .btn-mint:disabled { background: var(--border); color: var(--dim); cursor: not-allowed; box-shadow: none; }
 
-    /* ── result panel ── */
-    #result-panel {
-      display: none;
-      margin-top: 28px;
-      border: 3px solid var(--mint);
-      padding: 20px 18px;
-      background: var(--header-bg);
-      animation: slide-in 0.2s ease;
+    .btn-coral {
+      font-size: 0.48rem;
+      width: 100%;
+      padding: 13px 0;
+      background: var(--coral);
+      color: var(--header-bg);
+      box-shadow: 4px 4px 0 #7a3a28;
     }
-    #result-panel.error { border-color: var(--rose); }
+    .btn-coral:hover  { background: #edaa92; }
+    .btn-coral:active { transform: translate(2px,2px); box-shadow: 2px 2px 0 #7a3a28; }
+    .btn-coral:disabled { background: var(--border); color: var(--dim); cursor: not-allowed; box-shadow: none; }
+
+    .btn-rose {
+      font-size: 0.32rem;
+      padding: 6px 10px;
+      background: transparent;
+      color: var(--rose);
+      border: 2px solid var(--rose) !important;
+      box-shadow: 2px 2px 0 #5a2a2a;
+      white-space: nowrap;
+    }
+    .btn-rose:hover  { background: var(--rose); color: var(--header-bg); }
+    .btn-rose:active { transform: translate(1px,1px); box-shadow: 1px 1px 0 #5a2a2a; }
+    .btn-rose:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    /* ── result / feedback panels ── */
+    .result-panel {
+      display: none;
+      margin-top: 16px;
+      border: 3px solid var(--mint);
+      padding: 14px 16px;
+      background: var(--header-bg);
+      animation: slide-in 0.15s ease;
+    }
+    .result-panel.error   { border-color: var(--rose); }
+    .result-panel.success { border-color: var(--mint); }
     @keyframes slide-in {
-      from { opacity: 0; transform: translateY(8px); }
+      from { opacity: 0; transform: translateY(6px); }
       to   { opacity: 1; transform: translateY(0); }
     }
-
-    .result-icon { font-size: 1.5rem; margin-bottom: 12px; display: block; }
+    .result-icon   { font-size: 1.3rem; margin-bottom: 10px; display: block; }
     .result-status {
-      font-size: 0.6rem;
+      font-size: 0.5rem;
       letter-spacing: 2px;
       color: var(--mint);
-      margin-bottom: 10px;
+      margin-bottom: 8px;
     }
-    #result-panel.error .result-status {
-      color: var(--rose);
+    .result-panel.error .result-status { color: var(--rose); }
+    .result-detail { font-size: 0.34rem; color: var(--dim); line-height: 2.2; }
+
+    /* feedback toast for add/delete */
+    .toast {
+      display: none;
+      font-size: 0.36rem;
+      padding: 10px 14px;
+      margin-top: 14px;
+      border: 2px solid var(--mint);
+      color: var(--mint);
+      background: var(--header-bg);
+      animation: slide-in 0.15s ease;
     }
-    .result-detail {
-      font-size: 0.38rem;
-      color: var(--dim);
-      line-height: 2.2;
-    }
+    .toast.error { border-color: var(--rose); color: var(--rose); }
 
     /* ── scan history ── */
     .history-title {
-      font-size: 0.4rem;
+      font-size: 0.36rem;
       color: var(--dim);
       letter-spacing: 2px;
-      margin: 32px 0 12px;
+      margin: 24px 0 10px;
       border-left: 3px solid var(--border);
       padding-left: 10px;
     }
-    #history-list {
-      list-style: none;
-      max-height: 180px;
-      overflow-y: auto;
-    }
+    #history-list { list-style: none; max-height: 160px; overflow-y: auto; }
     #history-list li {
-      font-size: 0.35rem;
-      padding: 6px 0;
+      font-size: 0.32rem;
+      padding: 5px 0;
       border-bottom: 1px solid var(--border);
       display: flex;
       justify-content: space-between;
@@ -238,29 +306,90 @@
     #history-list li .h-code { color: var(--text); letter-spacing: 2px; }
     #history-list li .h-ok   { color: var(--mint); }
     #history-list li .h-err  { color: var(--rose); }
+
+    /* ── inventory list ── */
+    #inv-list { list-style: none; }
+    .inv-empty {
+      font-size: 0.38rem;
+      color: var(--dim);
+      text-align: center;
+      padding: 30px 0;
+      line-height: 2.5;
+    }
+    .inv-item {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 14px 16px;
+      background: var(--header-bg);
+      border: 2px solid var(--border);
+      margin-bottom: 10px;
+      animation: slide-in 0.15s ease;
+    }
+    .inv-item:last-child { margin-bottom: 0; }
+    .inv-info { flex: 1; min-width: 0; }
+    .inv-name {
+      font-size: 0.42rem;
+      color: var(--text);
+      margin-bottom: 8px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .inv-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+    }
+    .inv-price    { font-size: 0.34rem; color: var(--amber); }
+    .inv-stock    {
+      font-size: 0.3rem;
+      color: var(--mint);
+      border: 2px solid var(--mint);
+      padding: 2px 6px;
+    }
+    .inv-deadline { font-size: 0.3rem; color: var(--dim); }
+    #inv-loading {
+      font-size: 0.38rem;
+      color: var(--dim);
+      text-align: center;
+      padding: 20px 0;
+      animation: blink 1s step-end infinite;
+    }
   </style>
 </head>
 <body>
 
+  <!-- ── Top bar ── -->
   <div class="top-bar">
-    <a class="back-link" style="margin-bottom:0" href="/">◀ BACK TO MARKET</a>
-    <div>
+    <div class="top-bar-left">
+      <a class="back-link" href="/">◀ MARKET</a>
       <span class="store-name-label" id="store-name"></span>
-      <button class="btn-logout" id="btn-logout" style="margin-left:14px">[ LOGOUT ]</button>
     </div>
+    <button class="btn-logout" id="btn-logout">[ LOGOUT ]</button>
   </div>
 
-  <div class="terminal">
-    <div class="terminal-header">
-      <div class="logo">🌿 ECOEAT</div>
-      <div class="subtitle">VENDOR TERMINAL v1.0</div>
-    </div>
+  <!-- ── Page heading ── -->
+  <div class="page-heading">
+    <h1>🌿 ECOEAT</h1>
+    <p>VENDOR DASHBOARD v1.0</p>
+  </div>
 
-    <div class="prompt-line">C:\ECOEAT\VENDOR&gt; CLAIM_ORDER.EXE<span class="cursor-blink">█</span></div>
-    <hr class="divider" />
+  <!-- ── 3-section dashboard ── -->
+  <div class="dashboard">
 
-    <label for="pick-code">ENTER PICK-UP CODE:</label>
-    <div class="code-input-wrap">
+    <!-- ═══════════════════════════════════════════
+         SECTION 1 – CLAIM TERMINAL
+    ════════════════════════════════════════════ -->
+    <div class="panel section-claim">
+      <div class="section-title">// CLAIM TERMINAL</div>
+      <div class="prompt-line">
+        C:\ECOEAT&gt; CLAIM_ORDER.EXE<span class="cursor-blink">█</span>
+      </div>
+      <hr class="divider" />
+
+      <div class="field-label" style="margin-bottom:8px">ENTER PICK-UP CODE:</div>
       <input
         id="pick-code"
         type="text"
@@ -270,24 +399,77 @@
         spellcheck="false"
       />
       <div class="char-count" id="char-count">0 / 6</div>
+
+      <button class="btn-mint" id="btn-verify" disabled>[ VERIFY &amp; CLAIM ]</button>
+
+      <div class="result-panel" id="result-panel">
+        <span class="result-icon"  id="result-icon"></span>
+        <div  class="result-status" id="result-status"></div>
+        <div  class="result-detail" id="result-detail"></div>
+      </div>
+
+      <div id="history-section" style="display:none">
+        <div class="history-title">// SCAN LOG</div>
+        <ul id="history-list"></ul>
+      </div>
     </div>
 
-    <button id="btn-verify" disabled>[ VERIFY &amp; CLAIM ]</button>
+    <!-- ═══════════════════════════════════════════
+         SECTION 2 – ADD NEW BOX
+    ════════════════════════════════════════════ -->
+    <div class="panel section-add">
+      <div class="section-title coral">// ADD NEW BOX</div>
+      <div class="prompt-line">
+        C:\ECOEAT&gt; NEW_BOX.EXE<span class="cursor-blink">█</span>
+      </div>
+      <hr class="divider" />
 
-    <div id="result-panel">
-      <span class="result-icon" id="result-icon"></span>
-      <div class="result-status" id="result-status"></div>
-      <div class="result-detail" id="result-detail"></div>
+      <div class="field">
+        <label class="field-label" for="box-name">BOX NAME:</label>
+        <input class="field-input" id="box-name" type="text" placeholder="Sunrise Pastry Box" />
+      </div>
+
+      <div class="form-row">
+        <div class="field">
+          <label class="field-label" for="orig-price">ORIGINAL (RM):</label>
+          <input class="field-input" id="orig-price" type="number" step="0.01" min="0.01" placeholder="12.00" />
+        </div>
+        <div class="field">
+          <label class="field-label" for="flash-price">FLASH (RM):</label>
+          <input class="field-input" id="flash-price" type="number" step="0.01" min="0.01" placeholder="4.50" />
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="field">
+          <label class="field-label" for="stock-qty">STOCK QTY:</label>
+          <input class="field-input" id="stock-qty" type="number" step="1" min="0" placeholder="5" />
+        </div>
+        <div class="field">
+          <label class="field-label" for="pickup-deadline">PICKUP BY:</label>
+          <input class="field-input" id="pickup-deadline" type="time" />
+        </div>
+      </div>
+
+      <button class="btn-coral" id="btn-create" style="margin-top:4px">[ CREATE BOX ]</button>
+
+      <div class="toast" id="add-toast"></div>
     </div>
 
-    <div id="history-section" style="display:none">
-      <div class="history-title">// SCAN LOG</div>
-      <ul id="history-list"></ul>
+    <!-- ═══════════════════════════════════════════
+         SECTION 3 – ACTIVE INVENTORY
+    ════════════════════════════════════════════ -->
+    <div class="panel section-inventory">
+      <div class="section-title amber">// ACTIVE INVENTORY</div>
+      <div id="inv-loading">▓▓▓ LOADING INVENTORY... ▓▓▓</div>
+      <ul id="inv-list"></ul>
+      <div class="toast" id="inv-toast"></div>
     </div>
-  </div>
+
+  </div><!-- /.dashboard -->
 
 <script>
-  // ── Auth guard ──────────────────────────────────────────────────────────
+  // ── Auth guard ────────────────────────────────────────────────────────────
   (async () => {
     try {
       const res  = await fetch('/api/me');
@@ -297,7 +479,9 @@
       document.getElementById('store-name').textContent = `🏪 ${user.name}`;
     } catch {
       window.location.href = '/login';
+      return;
     }
+    loadInventory();
   })();
 
   document.getElementById('btn-logout').addEventListener('click', async () => {
@@ -305,7 +489,7 @@
     window.location.href = '/login';
   });
 
-  // ── Claim logic ─────────────────────────────────────────────────────────
+  // ── Section 1: Claim logic (unchanged) ───────────────────────────────────
   const input     = document.getElementById('pick-code');
   const btnVerify = document.getElementById('btn-verify');
   const charCount = document.getElementById('char-count');
@@ -327,7 +511,7 @@
   });
 
   function showResult({ success, icon, status, detail }) {
-    panel.className = success ? '' : 'error';
+    panel.className = `result-panel ${success ? 'success' : 'error'}`;
     panel.style.display = 'block';
     document.getElementById('result-icon').textContent   = icon;
     document.getElementById('result-status').textContent = status;
@@ -336,7 +520,7 @@
 
   function addHistory(code, success, label) {
     histSec.style.display = 'block';
-    const li = document.createElement('li');
+    const li  = document.createElement('li');
     const now = new Date().toLocaleTimeString('en-GB', { hour12: false });
     li.innerHTML = `
       <span>[${now}] <span class="h-code">${code}</span></span>
@@ -349,14 +533,14 @@
     const code = input.value.trim();
     if (code.length !== 6) return;
 
-    btnVerify.disabled = true;
+    btnVerify.disabled    = true;
     btnVerify.textContent = '[ SCANNING... ]';
 
     try {
       const res  = await fetch('/api/claim', {
-        method: 'POST',
+        method:  'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ pickUpCode: code }),
+        body:    JSON.stringify({ pickUpCode: code }),
       });
       const data = await res.json();
 
@@ -389,10 +573,152 @@
       });
       addHistory(code, false, '✘ NET ERR');
     } finally {
-      btnVerify.disabled = false;
+      btnVerify.disabled    = false;
       btnVerify.textContent = '[ VERIFY & CLAIM ]';
     }
   });
+
+  // ── Section 2: Add New Box ────────────────────────────────────────────────
+  function showToast(toastId, success, msg) {
+    const el = document.getElementById(toastId);
+    el.className   = `toast ${success ? '' : 'error'}`;
+    el.textContent = `${success ? '✔' : '⚠'} ${msg}`;
+    el.style.display = 'block';
+    clearTimeout(el._timer);
+    el._timer = setTimeout(() => { el.style.display = 'none'; }, 4000);
+  }
+
+  document.getElementById('btn-create').addEventListener('click', async () => {
+    const name     = document.getElementById('box-name').value.trim();
+    const origP    = parseFloat(document.getElementById('orig-price').value);
+    const flashP   = parseFloat(document.getElementById('flash-price').value);
+    const stock    = parseInt(document.getElementById('stock-qty').value, 10);
+    const deadline = document.getElementById('pickup-deadline').value;
+
+    if (!name || isNaN(origP) || isNaN(flashP) || isNaN(stock) || !deadline) {
+      showToast('add-toast', false, 'All fields are required.'); return;
+    }
+    if (flashP >= origP) {
+      showToast('add-toast', false, 'Flash price must be less than original price.'); return;
+    }
+    if (stock < 0) {
+      showToast('add-toast', false, 'Stock quantity cannot be negative.'); return;
+    }
+
+    const btn = document.getElementById('btn-create');
+    btn.disabled    = true;
+    btn.textContent = '[ SAVING... ]';
+
+    try {
+      const res  = await fetch('/api/vendor/boxes', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({
+          name,
+          originalPrice:  origP,
+          flashPrice:     flashP,
+          stockQuantity:  stock,
+          pickUpDeadline: deadline,
+        }),
+      });
+      const data = await res.json();
+
+      if (res.ok) {
+        showToast('add-toast', true, `Box created! ID: ${data.box_ID}`);
+        // Clear form
+        ['box-name','orig-price','flash-price','stock-qty','pickup-deadline']
+          .forEach(id => { document.getElementById(id).value = ''; });
+        loadInventory();
+      } else {
+        showToast('add-toast', false, data.error || 'Failed to create box.');
+      }
+    } catch (err) {
+      showToast('add-toast', false, 'Network error.');
+    } finally {
+      btn.disabled    = false;
+      btn.textContent = '[ CREATE BOX ]';
+    }
+  });
+
+  // ── Section 3: Active Inventory ───────────────────────────────────────────
+  function formatDeadline(t) {
+    if (!t) return '—';
+    const parts = t.split(':');
+    let h = parseInt(parts[0], 10);
+    const m = parts[1];
+    const ampm = h >= 12 ? 'PM' : 'AM';
+    h = h % 12 || 12;
+    return `${h}:${m} ${ampm}`;
+  }
+
+  function buildInvItem(box) {
+    const li = document.createElement('li');
+    li.className  = 'inv-item';
+    li.dataset.id = box.box_ID;
+    li.innerHTML  = `
+      <div class="inv-info">
+        <div class="inv-name">${box.name}</div>
+        <div class="inv-meta">
+          <span class="inv-price">RM${parseFloat(box.flashPrice).toFixed(2)}</span>
+          <span class="inv-stock">STOCK: ${box.stockQuantity}</span>
+          <span class="inv-deadline">BY ${formatDeadline(box.pickUpDeadline)}</span>
+        </div>
+      </div>
+      <button class="btn-rose btn-delete">[ DELETE ]</button>
+    `;
+    li.querySelector('.btn-delete').addEventListener('click', () => deleteBox(box.box_ID, li));
+    return li;
+  }
+
+  async function loadInventory() {
+    const loading = document.getElementById('inv-loading');
+    const list    = document.getElementById('inv-list');
+
+    loading.style.display = 'block';
+    list.innerHTML        = '';
+
+    try {
+      const res  = await fetch('/api/vendor/boxes');
+      if (res.status === 401) { window.location.href = '/login'; return; }
+      const boxes = await res.json();
+
+      loading.style.display = 'none';
+
+      if (!boxes.length) {
+        list.innerHTML = '<li class="inv-empty">NO BOXES YET.<br>CREATE YOUR FIRST ONE ▲</li>';
+        return;
+      }
+      boxes.forEach(box => list.appendChild(buildInvItem(box)));
+    } catch {
+      loading.style.display = 'none';
+      list.innerHTML = '<li class="inv-empty" style="color:var(--rose)">FAILED TO LOAD INVENTORY.</li>';
+    }
+  }
+
+  async function deleteBox(boxId, liEl) {
+    const btn = liEl.querySelector('.btn-delete');
+    btn.disabled    = true;
+    btn.textContent = '...';
+
+    try {
+      const res  = await fetch(`/api/vendor/boxes/${boxId}`, { method: 'DELETE' });
+      const data = await res.json();
+
+      if (res.ok) {
+        liEl.style.opacity    = '0';
+        liEl.style.transition = 'opacity 0.25s';
+        setTimeout(() => { liEl.remove(); showToast('inv-toast', true, `Box #${boxId} deleted.`); }, 260);
+      } else {
+        showToast('inv-toast', false, data.error || 'Delete failed.');
+        btn.disabled    = false;
+        btn.textContent = '[ DELETE ]';
+      }
+    } catch {
+      showToast('inv-toast', false, 'Network error.');
+      btn.disabled    = false;
+      btn.textContent = '[ DELETE ]';
+    }
+  }
 </script>
 </body>
 </html>
