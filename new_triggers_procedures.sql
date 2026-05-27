@@ -116,3 +116,31 @@ BEGIN
 END$$
 
 DELIMITER ;
+
+-- Step 1: Turn on the MySQL Event Scheduler engine
+SET GLOBAL event_scheduler = ON;
+
+-- Step 2: Create the Event
+DELIMITER $$
+
+CREATE EVENT IF NOT EXISTS evt_auto_cleanup
+ON SCHEDULE EVERY 5 MINUTE
+-- NOTE: To create this without it running immediately during your demo, 
+-- you can uncomment the line below:
+-- DISABLE
+DO
+BEGIN
+    -- ACTION 1: Penalize no-shows. Cancel any pending orders where the deadline passed.
+    UPDATE `Order` o
+    JOIN Blind_Box b ON o.box_ID = b.box_ID
+    SET o.status = 'Canceled'
+    WHERE o.status = 'Pending' AND NOW() > b.pickUpDeadline;
+
+    -- ACTION 2: Auto-hide the expired boxes from the marketplace.
+    UPDATE Blind_Box
+    SET is_active = FALSE
+    WHERE is_active = TRUE AND NOW() > pickUpDeadline;
+    
+END$$
+
+DELIMITER ;

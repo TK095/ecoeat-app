@@ -471,6 +471,67 @@
       animation: shimmer 1.1s ease infinite alternate;
     }
     @keyframes shimmer { from { opacity: 0.4; } to { opacity: 0.85; } }
+
+    /* ── customer feedback (reviews) ── */
+    .reviews-wrap {
+      max-width: 1100px;
+      margin: 28px auto 40px;
+      padding: 0 20px;
+    }
+    .reviews-empty {
+      font-size: 11px;
+      color: var(--dim);
+      text-align: center;
+      padding: 24px 0;
+      letter-spacing: 1px;
+    }
+    .review-item {
+      padding: 18px 4px;
+      border-bottom: 2px dashed var(--border);
+    }
+    .review-item:first-child { padding-top: 6px; }
+    .review-item:last-child {
+      border-bottom: none;
+      padding-bottom: 6px;
+    }
+    .review-header {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 14px;
+      margin-bottom: 14px;
+      font-size: 12px;
+      letter-spacing: 1px;
+      line-height: 1.4;
+    }
+    .review-student {
+      color: var(--mint);
+      font-size: 13px;
+    }
+    .review-stars {
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+    }
+    .review-box {
+      font-size: 10px;
+      color: var(--amber);
+      margin-left: auto;
+    }
+    .review-balloon-wrap {
+      margin-left: 8px;
+    }
+    .review-balloon-wrap .nes-balloon {
+      font-size: 11px;
+      line-height: 1.8;
+      color: var(--text);
+      letter-spacing: 1px;
+      margin: 0;
+    }
+    .review-balloon-wrap .nes-balloon.is-empty {
+      color: var(--dim);
+      font-style: normal;
+    }
   </style>
   <link rel="stylesheet" href="/static/style.css" />
 </head>
@@ -603,6 +664,18 @@
 
   </div><!-- /.dashboard -->
 
+  <!-- ═══════════════════════════════════════════
+       CUSTOMER FEEDBACK (REVIEWS)
+  ════════════════════════════════════════════ -->
+  <div class="reviews-wrap">
+    <div class="panel">
+      <div class="section-title amber">// FEEDBACK TERMINAL</div>
+      <div id="reviews-list">
+        <div class="reviews-empty blink">▓▓▓ LOADING REVIEWS... ▓▓▓</div>
+      </div>
+    </div>
+  </div>
+
 <script>
   // ── Auth guard + initial data load ──────────────────────────────────────
   (async () => {
@@ -617,10 +690,64 @@
       window.location.href = '/login';
       return;
     }
-    // Fire all three data fetches in parallel once auth is confirmed
+    // Fire all data fetches in parallel once auth is confirmed
     loadAnalytics();
     loadInventory();
+    loadReviews();
   })();
+
+  // ── Reviews ──────────────────────────────────────────────────────────────
+  async function loadReviews() {
+    const list = document.getElementById('reviews-list');
+    try {
+      const res = await fetch('/api/vendor/reviews');
+      if (!res.ok) {
+        list.innerHTML = '<div class="reviews-empty">UNABLE TO LOAD REVIEWS.</div>';
+        return;
+      }
+      const rows = await res.json();
+      if (!rows.length) {
+        list.innerHTML = '<div class="reviews-empty">NO REVIEWS YET. KEEP RESCUING FOOD!</div>';
+        return;
+      }
+      list.innerHTML = rows.map(renderReview).join('');
+    } catch {
+      list.innerHTML = '<div class="reviews-empty">NETWORK ERROR LOADING REVIEWS.</div>';
+    }
+  }
+
+  function reviewStars(rating) {
+    const r = parseInt(rating, 10) || 0;
+    let html = '';
+    for (let i = 0; i < r; i++) html += '<i class="nes-icon is-small star"></i>';
+    for (let i = r; i < 5; i++) html += '<i class="nes-icon is-small star is-empty"></i>';
+    return html;
+  }
+
+  function escapeHTML(str) {
+    return String(str).replace(/[&<>"']/g, c => ({
+      '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+    }[c]));
+  }
+
+  function renderReview(row) {
+    const comment   = (row.comment || '').trim();
+    const hasText   = comment.length > 0;
+    const balloonCls = `nes-balloon from-left is-dark${hasText ? '' : ' is-empty'}`;
+    const body      = hasText ? escapeHTML(comment) : 'NO COMMENT PROVIDED';
+    return `
+      <div class="review-item">
+        <div class="review-header">
+          <span class="review-student">${escapeHTML(row.student_name)}</span>
+          <span class="review-stars">${reviewStars(row.rating)}</span>
+          <span class="review-box">// ${escapeHTML(row.box_name)}</span>
+        </div>
+        <div class="review-balloon-wrap">
+          <div class="${balloonCls}"><p>${body}</p></div>
+        </div>
+      </div>
+    `;
+  }
 
   // ── Analytics ─────────────────────────────────────────────────────────────
   async function loadAnalytics() {

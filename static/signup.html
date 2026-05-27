@@ -124,7 +124,7 @@
     .cursor-blink { animation: blink 1s step-end infinite; color: var(--mint); }
   </style>
 </head>
-<body>
+<body class="auth-page">
   <div class="crt-overlay"></div>
 
   <div class="terminal nes-container is-dark with-title is-centered">
@@ -167,12 +167,6 @@
       <label class="field-label" for="password">PASSWORD:</label>
       <input class="nes-input is-dark" id="password" type="password" placeholder="********" autocomplete="new-password" />
       <div class="field-hint">MIN. 6 CHARACTERS RECOMMENDED</div>
-    </div>
-
-    <!-- Phone -->
-    <div class="field">
-      <label class="field-label" for="phone">PHONE:</label>
-      <input class="nes-input is-dark" id="phone" type="tel" placeholder="09-XXXX-XXXXX" autocomplete="tel" />
     </div>
 
     <!-- Dynamic extra field: student number OR category -->
@@ -221,10 +215,9 @@
     const name     = document.getElementById('name').value.trim();
     const email    = document.getElementById('email').value.trim();
     const password = document.getElementById('password').value;
-    const phone    = document.getElementById('phone').value.trim();
     const extra    = extraInput.value.trim();
 
-    if (!name || !email || !password || !phone || !extra) {
+    if (!name || !email || !password || !extra) {
       showResult(false, 'All fields are required.');
       return;
     }
@@ -233,7 +226,7 @@
       return;
     }
 
-    const body = { role, name, email, password, phone };
+    const body = { role, name, email, password };
     if (role === 'student') {
       body.student_number = extra;
     } else {

@@ -473,6 +473,44 @@ def vendor_analytics():
         conn.close()
 
 
+# ── GET /api/vendor/reviews ──────────────────────────────────────────────────
+
+@app.route("/api/vendor/reviews", methods=["GET"])
+def vendor_reviews():
+    store_id, err = login_required(role="store")
+    if err:
+        return err
+
+    conn = get_db()
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                """SELECT
+                       s.name        AS student_name,
+                       r.rating,
+                       r.comment,
+                       r.created_at,
+                       b.name        AS box_name
+                   FROM Review r
+                   JOIN `Order`    o ON r.order_ID = o.order_ID
+                   JOIN Blind_Box  b ON o.box_ID   = b.box_ID
+                   JOIN Student    s ON o.SID      = s.SID
+                   WHERE b.store_ID = %s
+                   ORDER BY r.created_at DESC""",
+                (store_id,),
+            )
+            rows = cur.fetchall()
+        for row in rows:
+            if row.get("created_at") is not None:
+                row["created_at"] = str(row["created_at"])
+        return jsonify(rows)
+    except Exception as e:
+        msg = e.args[1] if len(e.args) > 1 else str(e)
+        return jsonify({"error": msg}), 500
+    finally:
+        conn.close()
+
+
 # ── GET /api/vendor/boxes ────────────────────────────────────────────────────
 
 @app.route("/api/vendor/boxes", methods=["GET"])

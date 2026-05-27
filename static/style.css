@@ -28,6 +28,18 @@ body {
   overflow-x: hidden;
 }
 
+/* ── Auth pages: animated retro-cafe GIF backdrop ─────────── */
+.auth-page {
+  background:
+    linear-gradient(rgba(26, 26, 46, 0.85), rgba(22, 33, 62, 0.95)),
+    url('/static/retro-background.gif'),
+    #1a1a2e;
+  background-size: cover;
+  background-position: center;
+  background-attachment: fixed;
+  image-rendering: pixelated;
+}
+
 /* ── Neon hero title ─────────────────────────────────────── */
 .neon-title {
   font-size: 2rem;
