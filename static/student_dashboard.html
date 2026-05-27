@@ -244,7 +244,7 @@
     .state-msg.blink { animation: blink 1s step-end infinite; }
     @keyframes blink { 50% { opacity: 0; } }
 
-    /* ── skeleton shimmer (optional polish) ── */
+    /* ── skeleton shimmer ── */
     .profile-panel.loading .stat-value {
       background: var(--border);
       color: transparent;
@@ -252,6 +252,142 @@
       animation: shimmer 1.2s ease infinite alternate;
     }
     @keyframes shimmer { from { opacity: 0.4; } to { opacity: 0.8; } }
+
+    /* ── review button ── */
+    .btn-review {
+      font-family: 'Press Start 2P', monospace;
+      font-size: 0.36rem;
+      width: 100%;
+      padding: 9px 0;
+      background: transparent;
+      color: var(--amber);
+      border: 2px solid var(--amber);
+      cursor: pointer;
+      letter-spacing: 1px;
+      margin-top: 10px;
+      box-shadow: 3px 3px 0 #5a4a10;
+      transition: transform 0.08s, box-shadow 0.08s;
+    }
+    .btn-review:hover  { background: var(--amber); color: var(--header-bg); }
+    .btn-review:active { transform: translate(2px,2px); box-shadow: 1px 1px 0 #5a4a10; }
+    .badge-reviewed { color: var(--amber); border-color: var(--amber); }
+
+    /* ── review modal overlay ── */
+    .rmodal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(27,29,50,0.9);
+      z-index: 300;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+    }
+    .rmodal-overlay.open { display: flex; }
+
+    .rmodal-box {
+      background: var(--header-bg);
+      border: 3px solid var(--amber);
+      padding: 30px 28px 28px;
+      max-width: 440px;
+      width: 100%;
+      box-shadow: 8px 8px 0 rgba(0,0,0,0.4);
+      animation: pop-in 0.15s ease;
+    }
+    .rmodal-title {
+      font-size: 0.6rem;
+      color: var(--amber);
+      letter-spacing: 3px;
+      margin-bottom: 6px;
+    }
+    .rmodal-subtitle {
+      font-size: 0.35rem;
+      color: var(--coral);
+      margin-bottom: 20px;
+      letter-spacing: 1px;
+    }
+
+    /* ── star selector ── */
+    .stars-row {
+      display: flex;
+      gap: 6px;
+      margin-bottom: 10px;
+    }
+    .star-btn {
+      font-size: 1.4rem;
+      color: var(--border);
+      cursor: pointer;
+      background: none;
+      border: none;
+      padding: 0;
+      line-height: 1;
+      transition: color 0.08s, transform 0.08s;
+    }
+    .star-btn.lit  { color: var(--amber); }
+    .star-btn:hover { transform: scale(1.15); }
+    .rating-hint {
+      font-size: 0.32rem;
+      color: var(--dim);
+      margin-bottom: 18px;
+      letter-spacing: 1px;
+      min-height: 1.2em;
+    }
+
+    /* ── comment textarea ── */
+    .review-textarea {
+      font-family: 'Press Start 2P', monospace;
+      font-size: 0.38rem;
+      background: var(--surface);
+      color: var(--text);
+      border: 3px solid var(--border);
+      width: 100%;
+      padding: 10px 12px;
+      resize: vertical;
+      min-height: 80px;
+      outline: none;
+      caret-color: var(--mint);
+      margin-bottom: 18px;
+      line-height: 1.8;
+    }
+    .review-textarea:focus { border-color: var(--mint); }
+    .review-textarea::placeholder { color: var(--border); }
+
+    /* ── modal buttons row ── */
+    .rmodal-btns { display: flex; gap: 12px; }
+    .btn-rsubmit {
+      font-family: 'Press Start 2P', monospace;
+      font-size: 0.42rem;
+      flex: 1;
+      padding: 11px 0;
+      background: var(--amber);
+      color: var(--header-bg);
+      border: none;
+      cursor: pointer;
+      letter-spacing: 1px;
+      box-shadow: 3px 3px 0 #5a4a10;
+      transition: transform 0.08s;
+    }
+    .btn-rsubmit:hover  { background: #f8d898; }
+    .btn-rsubmit:active { transform: translate(2px,2px); box-shadow: 1px 1px 0 #5a4a10; }
+    .btn-rsubmit:disabled { background: var(--border); color: var(--dim); cursor: not-allowed; box-shadow: none; }
+    .btn-rcancel {
+      font-family: 'Press Start 2P', monospace;
+      font-size: 0.42rem;
+      padding: 11px 16px;
+      background: transparent;
+      color: var(--dim);
+      border: 2px solid var(--border);
+      cursor: pointer;
+      letter-spacing: 1px;
+    }
+    .btn-rcancel:hover { color: var(--text); border-color: var(--text); }
+    .review-err {
+      font-size: 0.34rem;
+      color: var(--rose);
+      margin-top: 12px;
+      display: none;
+      line-height: 2;
+    }
   </style>
 </head>
 <body>
@@ -295,6 +431,37 @@
     </div>
 
   </div><!-- /.page -->
+
+  <!-- ── Review Modal ── -->
+  <div class="rmodal-overlay" id="review-modal">
+    <div class="rmodal-box">
+      <div class="rmodal-title">★ LEAVE A REVIEW</div>
+      <div class="rmodal-subtitle" id="rmodal-box-name"></div>
+
+      <div style="font-size:0.32rem; color:var(--dim); letter-spacing:2px; margin-bottom:8px;">YOUR RATING:</div>
+      <div class="stars-row" id="stars-row">
+        <button class="star-btn" data-v="1">★</button>
+        <button class="star-btn" data-v="2">★</button>
+        <button class="star-btn" data-v="3">★</button>
+        <button class="star-btn" data-v="4">★</button>
+        <button class="star-btn" data-v="5">★</button>
+      </div>
+      <div class="rating-hint" id="rating-hint">CLICK A STAR TO RATE</div>
+
+      <textarea
+        class="review-textarea"
+        id="review-comment"
+        placeholder="SHARE YOUR EXPERIENCE... (OPTIONAL)"
+        maxlength="300"
+      ></textarea>
+
+      <div class="rmodal-btns">
+        <button class="btn-rsubmit" id="btn-rsubmit" disabled>[ SUBMIT ]</button>
+        <button class="btn-rcancel" id="btn-rcancel">[ CANCEL ]</button>
+      </div>
+      <div class="review-err" id="review-err"></div>
+    </div>
+  </div>
 
 <script>
   // ── Auth guard + profile load ─────────────────────────────────────────────
@@ -367,16 +534,26 @@
         <div class="code-value">${order.pickUpCode}</div>
       </div>` : '';
 
-    // Badge
-    let badgeHTML = '';
-    if (statusLower === 'claimed')  badgeHTML = `<span class="badge badge-claimed">✔ CLAIMED</span>`;
-    if (statusLower === 'canceled') badgeHTML = `<span class="badge badge-canceled">✘ CANCELED</span>`;
-    if (statusLower === 'pending')  badgeHTML = `<span class="badge badge-pending">● PENDING</span>`;
+    // Badge + action buttons
+    let badgeHTML  = '';
+    let actionHTML = '';
 
-    // Cancel button — only for Pending
-    const cancelHTML = statusLower === 'pending'
-      ? `<button class="btn-cancel" data-id="${order.order_ID}">[ CANCEL ORDER ]</button>`
-      : '';
+    if (statusLower === 'pending') {
+      badgeHTML  = `<span class="badge badge-pending">● PENDING</span>`;
+      actionHTML = `<button class="btn-cancel" data-id="${order.order_ID}">[ CANCEL ORDER ]</button>`;
+    } else if (statusLower === 'canceled') {
+      badgeHTML = `<span class="badge badge-canceled">✘ CANCELED</span>`;
+    } else if (statusLower === 'claimed') {
+      if (order.has_review) {
+        badgeHTML = `<span class="badge badge-claimed">✔ CLAIMED</span>
+                     <span class="badge badge-reviewed" style="margin-left:8px">★ REVIEWED</span>`;
+      } else {
+        badgeHTML  = `<span class="badge badge-claimed">✔ CLAIMED</span>`;
+        actionHTML = `<button class="btn-review"
+                        data-id="${order.order_ID}"
+                        data-name="${order.box_name}">[ ★ LEAVE REVIEW ]</button>`;
+      }
+    }
 
     card.innerHTML = `
       <div class="card-order-id">ORDER #${order.order_ID} · ${formatDate(order.orderTime)}</div>
@@ -388,13 +565,18 @@
       </div>
       ${codeHTML}
       ${badgeHTML}
-      ${cancelHTML}
+      ${actionHTML}
     `;
 
-    // Attach cancel handler
     const btnCancel = card.querySelector('.btn-cancel');
     if (btnCancel) {
       btnCancel.addEventListener('click', () => cancelOrder(order.order_ID, card, btnCancel));
+    }
+    const btnReview = card.querySelector('.btn-review');
+    if (btnReview) {
+      btnReview.addEventListener('click', () =>
+        openReviewModal(parseInt(btnReview.dataset.id), btnReview.dataset.name, btnReview)
+      );
     }
 
     return card;
@@ -466,6 +648,102 @@
       btn.textContent = '[ CANCEL ORDER ]';
     }
   }
+
+  // ── Review modal ─────────────────────────────────────────────────────────
+  const STAR_LABELS = ['', 'TERRIBLE', 'BAD', 'OKAY', 'GOOD', 'EXCELLENT!'];
+  let _reviewOrderId = null;
+  let _selectedRating = 0;
+
+  const rModal    = document.getElementById('review-modal');
+  const starsRow  = document.getElementById('stars-row');
+  const ratingHint = document.getElementById('rating-hint');
+  const btnRSubmit = document.getElementById('btn-rsubmit');
+  const reviewErr  = document.getElementById('review-err');
+
+  function setStars(n) {
+    _selectedRating = n;
+    starsRow.querySelectorAll('.star-btn').forEach(s => {
+      s.classList.toggle('lit', parseInt(s.dataset.v) <= n);
+    });
+    ratingHint.textContent  = n ? `${n}/5  —  ${STAR_LABELS[n]}` : 'CLICK A STAR TO RATE';
+    btnRSubmit.disabled     = n === 0;
+    reviewErr.style.display = 'none';
+  }
+
+  starsRow.querySelectorAll('.star-btn').forEach(s => {
+    s.addEventListener('click',      () => setStars(parseInt(s.dataset.v)));
+    s.addEventListener('mouseenter', () => {
+      starsRow.querySelectorAll('.star-btn').forEach(x =>
+        x.classList.toggle('lit', parseInt(x.dataset.v) <= parseInt(s.dataset.v))
+      );
+    });
+    s.addEventListener('mouseleave', () => setStars(_selectedRating));
+  });
+
+  function openReviewModal(orderId, boxName, triggerBtn) {
+    _reviewOrderId  = orderId;
+    _selectedRating = 0;
+    setStars(0);
+    document.getElementById('rmodal-box-name').textContent = boxName;
+    document.getElementById('review-comment').value        = '';
+    reviewErr.style.display  = 'none';
+    btnRSubmit.disabled      = true;
+    btnRSubmit.textContent   = '[ SUBMIT ]';
+    rModal.classList.add('open');
+    rModal._trigger = triggerBtn;
+  }
+
+  document.getElementById('btn-rcancel').addEventListener('click', () => {
+    rModal.classList.remove('open');
+  });
+  rModal.addEventListener('click', e => {
+    if (e.target === rModal) rModal.classList.remove('open');
+  });
+
+  btnRSubmit.addEventListener('click', async () => {
+    if (_selectedRating === 0) return;
+
+    btnRSubmit.disabled    = true;
+    btnRSubmit.textContent = '[ SUBMITTING... ]';
+    reviewErr.style.display = 'none';
+
+    try {
+      const res  = await fetch('/api/reviews', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({
+          order_ID: _reviewOrderId,
+          rating:   _selectedRating,
+          comment:  document.getElementById('review-comment').value.trim(),
+        }),
+      });
+      const data = await res.json();
+
+      if (res.ok) {
+        rModal.classList.remove('open');
+        // Swap the LEAVE REVIEW button → REVIEWED badge on the card
+        const trigger = rModal._trigger;
+        if (trigger) {
+          const reviewed = document.createElement('span');
+          reviewed.className   = 'badge badge-reviewed';
+          reviewed.textContent = '★ REVIEWED';
+          reviewed.style.marginTop = '10px';
+          trigger.replaceWith(reviewed);
+        }
+        alert(`REVIEW SUBMITTED! THANK YOU ★${_selectedRating}`);
+      } else {
+        reviewErr.textContent   = `⚠ ${data.error || 'Submission failed.'}`;
+        reviewErr.style.display = 'block';
+        btnRSubmit.disabled     = false;
+        btnRSubmit.textContent  = '[ SUBMIT ]';
+      }
+    } catch (err) {
+      reviewErr.textContent   = `⚠ NETWORK ERROR: ${err.message}`;
+      reviewErr.style.display = 'block';
+      btnRSubmit.disabled     = false;
+      btnRSubmit.textContent  = '[ SUBMIT ]';
+    }
+  });
 
   init();
 </script>

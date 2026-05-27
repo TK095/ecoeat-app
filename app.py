@@ -221,10 +221,12 @@ def student_get_orders():
                     b.name          AS box_name,
                     b.flashPrice,
                     b.pickUpDeadline,
-                    s.name          AS store_name
+                    s.name          AS store_name,
+                    IF(r.review_ID IS NOT NULL, 1, 0) AS has_review
                 FROM `Order` o
                 JOIN Blind_Box b ON o.box_ID  = b.box_ID
                 JOIN Store     s ON b.store_ID = s.store_ID
+                LEFT JOIN Review r ON r.order_ID = o.order_ID
                 WHERE o.SID = %s
                 ORDER BY o.order_ID DESC
             """, (sid,))
@@ -292,6 +294,83 @@ def student_cancel_order(order_id):
             "refunded": float(total_amount),
         })
 
+    except Exception as e:
+        conn.rollback()
+        msg = e.args[1] if len(e.args) > 1 else str(e)
+        return jsonify({"error": msg}), 500
+    finally:
+        conn.close()
+
+
+# ── POST /api/reviews ────────────────────────────────────────────────────────
+
+@app.route("/api/reviews", methods=["POST"])
+def submit_review():
+    sid, err = login_required(role="student")
+    if err:
+        return err
+
+    data     = request.get_json(force=True)
+    order_id = data.get("order_ID")
+    rating   = data.get("rating")
+    comment  = data.get("comment", "").strip()
+
+    if not order_id or rating is None:
+        return jsonify({"error": "order_ID and rating are required."}), 400
+    try:
+        rating = int(rating)
+    except (ValueError, TypeError):
+        return jsonify({"error": "rating must be an integer."}), 400
+    if not 1 <= rating <= 5:
+        return jsonify({"error": "Rating must be between 1 and 5."}), 400
+
+    conn = get_db()
+    try:
+        with conn.cursor() as cur:
+            # Verify the student owns this order and it is Claimed
+            cur.execute(
+                """SELECT o.order_ID, b.store_ID
+                   FROM `Order` o
+                   JOIN Blind_Box b ON o.box_ID = b.box_ID
+                   WHERE o.order_ID = %s AND o.SID = %s AND o.status = 'Claimed'""",
+                (order_id, sid),
+            )
+            order = cur.fetchone()
+            if not order:
+                return jsonify({
+                    "error": "Order not found, not yours, or not yet claimed."
+                }), 400
+
+            store_id = order["store_ID"]
+
+            # Insert review (UNIQUE constraint on order_ID enforces 1-per-order)
+            cur.execute(
+                "INSERT INTO Review (order_ID, rating, comment) VALUES (%s, %s, %s)",
+                (order_id, rating, comment or None),
+            )
+
+            # Recalculate and update the store's aggregate rating
+            cur.execute(
+                """UPDATE Store
+                   SET rating = (
+                       SELECT ROUND(AVG(r.rating), 2)
+                       FROM Review r
+                       JOIN `Order` o ON r.order_ID = o.order_ID
+                       JOIN Blind_Box b ON o.box_ID = b.box_ID
+                       WHERE b.store_ID = %s
+                   )
+                   WHERE store_ID = %s""",
+                (store_id, store_id),
+            )
+
+        conn.commit()
+        return jsonify({"message": "Review submitted. Thank you!"}), 201
+
+    except pymysql.err.IntegrityError as e:
+        conn.rollback()
+        if e.args[0] == 1062:
+            return jsonify({"error": "You have already reviewed this order."}), 400
+        return jsonify({"error": str(e.args[1])}), 409
     except Exception as e:
         conn.rollback()
         msg = e.args[1] if len(e.args) > 1 else str(e)

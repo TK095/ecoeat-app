@@ -453,6 +453,16 @@
   });
 
   // ── Helpers ─────────────────────────────────────────────────────────────
+  function starsDisplay(rating) {
+    if (rating === null || rating === undefined) return '<span style="color:var(--dim)">NO RATINGS</span>';
+    const r    = parseFloat(rating);
+    const full = Math.floor(r);
+    const half = (r - full) >= 0.5 ? 1 : 0;
+    const empty = 5 - full - half;
+    return `<span style="color:var(--amber)">${'★'.repeat(full)}${half ? '½' : ''}${'☆'.repeat(empty)}</span>`
+         + `<span style="color:var(--dim); font-size:0.28rem; margin-left:5px">${r.toFixed(1)}</span>`;
+  }
+
   function formatTime(t) {
     if (!t) return '—';
     const parts = t.split(':');
@@ -476,7 +486,8 @@
       <div class="card-meta">
         PICKUP BY: <span>${formatTime(box.pickUpDeadline)}</span><br>
         LOCATION: <span>${box.location}</span><br>
-        CATEGORY: <span>${box.category}</span>
+        CATEGORY: <span>${box.category}</span><br>
+        RATING: <span>${starsDisplay(box.rating)}</span>
       </div>
       <div class="stock-badge">STOCK: ${box.stockQuantity}</div>
       <button class="btn-reserve" data-box-id="${box.box_ID}" data-flash="${box.flashPrice}">
