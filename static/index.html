@@ -54,16 +54,23 @@
       letter-spacing: 2px;
     }
 
-    /* ── nav link to vendor ── */
-    .vendor-link {
-      display: inline-block;
-      margin-top: 12px;
-      font-size: 0.45rem;
-      color: var(--coral);
-      text-decoration: none;
-      border-bottom: 2px solid var(--coral);
+    /* ── header nav links ── */
+    .header-nav {
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 20px;
+      margin-top: 14px;
     }
-    .vendor-link:hover { opacity: 0.75; }
+    .vendor-link, .dashboard-link {
+      display: inline-block;
+      font-size: 0.42rem;
+      text-decoration: none;
+      border-bottom: 2px solid;
+    }
+    .vendor-link    { color: var(--coral); border-color: var(--coral); }
+    .dashboard-link { color: var(--amber); border-color: var(--amber); }
+    .vendor-link:hover, .dashboard-link:hover { opacity: 0.75; }
 
     /* ── user bar ── */
     .user-bar {
@@ -290,7 +297,10 @@
       <span class="user-balance" id="user-balance"></span>
       <button class="btn-logout" id="btn-logout">[ LOGOUT ]</button>
     </div>
-    <a class="vendor-link" href="/vendor">▶ VENDOR PORTAL</a>
+    <div class="header-nav">
+      <a class="dashboard-link" href="/student_dashboard">▶ MY PROFILE &amp; ORDERS</a>
+      <a class="vendor-link"    href="/vendor">▶ VENDOR PORTAL</a>
+    </div>
   </header>
 
   <main>

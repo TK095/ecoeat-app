@@ -51,6 +51,10 @@ def login_page():
 def signup_page():
     return send_from_directory("static", "signup.html")
 
+@app.route("/student_dashboard")
+def student_dashboard_page():
+    return send_from_directory("static", "student_dashboard.html")
+
 
 # ── POST /api/signup ─────────────────────────────────────────────────────────
 
@@ -195,6 +199,105 @@ def me():
 def logout():
     session.clear()
     return jsonify({"message": "Logged out."})
+
+
+# ── GET /api/student/orders ──────────────────────────────────────────────────
+
+@app.route("/api/student/orders", methods=["GET"])
+def student_get_orders():
+    sid, err = login_required(role="student")
+    if err:
+        return err
+
+    conn = get_db()
+    try:
+        with conn.cursor() as cur:
+            cur.execute("""
+                SELECT
+                    o.order_ID,
+                    o.pickUpCode,
+                    o.status,
+                    o.orderTime,
+                    b.name          AS box_name,
+                    b.flashPrice,
+                    b.pickUpDeadline,
+                    s.name          AS store_name
+                FROM `Order` o
+                JOIN Blind_Box b ON o.box_ID  = b.box_ID
+                JOIN Store     s ON b.store_ID = s.store_ID
+                WHERE o.SID = %s
+                ORDER BY o.order_ID DESC
+            """, (sid,))
+            rows = cur.fetchall()
+        for row in rows:
+            if row.get("pickUpDeadline") is not None:
+                row["pickUpDeadline"] = str(row["pickUpDeadline"])
+            if row.get("orderTime") is not None:
+                row["orderTime"] = str(row["orderTime"])
+        return jsonify(rows)
+    except Exception as e:
+        msg = e.args[1] if len(e.args) > 1 else str(e)
+        return jsonify({"error": msg}), 500
+    finally:
+        conn.close()
+
+
+# ── POST /api/student/orders/<order_id>/cancel ────────────────────────────────
+
+@app.route("/api/student/orders/<int:order_id>/cancel", methods=["POST"])
+def student_cancel_order(order_id):
+    sid, err = login_required(role="student")
+    if err:
+        return err
+
+    conn = get_db()
+    try:
+        with conn.cursor() as cur:
+            # Verify order belongs to this student and is still Pending
+            cur.execute(
+                """SELECT box_ID, totalAmount
+                   FROM `Order`
+                   WHERE order_ID = %s AND SID = %s AND status = 'Pending'""",
+                (order_id, sid),
+            )
+            order = cur.fetchone()
+
+            if not order:
+                return jsonify({
+                    "error": "Order not found, already processed, or does not belong to you."
+                }), 400
+
+            box_id      = order["box_ID"]
+            total_amount = order["totalAmount"]
+
+            # a) Cancel the order
+            cur.execute(
+                "UPDATE `Order` SET status = 'Canceled' WHERE order_ID = %s",
+                (order_id,),
+            )
+            # b) Restock the blind box
+            cur.execute(
+                "UPDATE Blind_Box SET stockQuantity = stockQuantity + 1 WHERE box_ID = %s",
+                (box_id,),
+            )
+            # c) Refund the student
+            cur.execute(
+                "UPDATE Student SET acc_balance = acc_balance + %s WHERE SID = %s",
+                (total_amount, sid),
+            )
+
+        conn.commit()
+        return jsonify({
+            "message": "Order canceled and refund processed.",
+            "refunded": float(total_amount),
+        })
+
+    except Exception as e:
+        conn.rollback()
+        msg = e.args[1] if len(e.args) > 1 else str(e)
+        return jsonify({"error": msg}), 500
+    finally:
+        conn.close()
 
 
 # ── GET /api/boxes ───────────────────────────────────────────────────────────

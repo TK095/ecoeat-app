@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>EcoEat – My Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://unpkg.com/nes.css@2.3.0/css/nes.min.css" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:        #2b2d42;
+      --surface:   #363858;
+      --header-bg: #1e2035;
+      --border:    #5a5e7e;
+      --mint:      #7ecfb3;
+      --coral:     #e8957a;
+      --amber:     #f0c87a;
+      --rose:      #c47878;
+      --dim:       #7a7e9e;
+      --text:      #d4d6f0;
+    }
+
+    body {
+      font-family: 'Press Start 2P', monospace;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      padding: 0 0 60px;
+    }
+
+    /* ── top bar ── */
+    .top-bar {
+      background: var(--header-bg);
+      border-bottom: 3px solid var(--border);
+      padding: 14px 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 3px 12px rgba(0,0,0,0.35);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .back-link {
+      font-size: 0.38rem;
+      color: var(--dim);
+      text-decoration: none;
+      border-bottom: 2px solid var(--dim);
+      letter-spacing: 1px;
+    }
+    .back-link:hover { color: var(--text); border-color: var(--text); }
+    .btn-logout {
+      font-family: 'Press Start 2P', monospace;
+      font-size: 0.34rem;
+      background: transparent;
+      color: var(--rose);
+      border: 2px solid var(--rose);
+      padding: 6px 12px;
+      cursor: pointer;
+      letter-spacing: 1px;
+    }
+    .btn-logout:hover { background: var(--rose); color: var(--header-bg); }
+
+    /* ── page wrapper ── */
+    .page {
+      max-width: 1060px;
+      margin: 0 auto;
+      padding: 36px 20px 0;
+    }
+
+    /* ── page title ── */
+    .page-title {
+      font-size: clamp(0.8rem, 3vw, 1.3rem);
+      color: var(--mint);
+      letter-spacing: 4px;
+      margin-bottom: 6px;
+    }
+    .page-sub {
+      font-size: 0.38rem;
+      color: var(--dim);
+      letter-spacing: 2px;
+      margin-bottom: 30px;
+    }
+
+    /* ── profile panel ── */
+    .profile-panel {
+      background: var(--surface);
+      border: 3px solid var(--border);
+      box-shadow: 6px 6px 0 rgba(0,0,0,0.28);
+      padding: 24px 28px;
+      margin-bottom: 28px;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 20px;
+    }
+    .profile-stat { display: flex; flex-direction: column; gap: 8px; }
+    .stat-label {
+      font-size: 0.3rem;
+      color: var(--dim);
+      letter-spacing: 2px;
+      text-transform: uppercase;
+    }
+    .stat-value {
+      font-size: 0.55rem;
+      color: var(--text);
+      line-height: 1.5;
+    }
+    .stat-value.mint   { color: var(--mint); }
+    .stat-value.amber  { color: var(--amber); }
+    .stat-value.coral  { color: var(--coral); }
+
+    /* ── section header ── */
+    .section-title {
+      font-size: 0.5rem;
+      color: var(--coral);
+      letter-spacing: 3px;
+      margin-bottom: 20px;
+      border-left: 4px solid var(--coral);
+      padding-left: 12px;
+    }
+
+    /* ── orders grid ── */
+    .orders-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
+      gap: 20px;
+    }
+
+    /* ── order card ── */
+    .order-card {
+      background: var(--surface);
+      border: 3px solid var(--border);
+      padding: 20px 18px;
+      box-shadow: 4px 4px 0 rgba(0,0,0,0.28);
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+      animation: pop-in 0.18s ease;
+    }
+    @keyframes pop-in {
+      from { transform: scale(0.95); opacity: 0; }
+      to   { transform: scale(1);    opacity: 1; }
+    }
+
+    .card-order-id {
+      font-size: 0.3rem;
+      color: var(--dim);
+      letter-spacing: 2px;
+      margin-bottom: 8px;
+    }
+    .card-box-name {
+      font-size: 0.5rem;
+      color: var(--mint);
+      line-height: 1.6;
+      margin-bottom: 6px;
+    }
+    .card-store-name {
+      font-size: 0.35rem;
+      color: var(--coral);
+      letter-spacing: 1px;
+      margin-bottom: 14px;
+    }
+    .card-price {
+      font-size: 0.6rem;
+      color: var(--amber);
+      margin-bottom: 14px;
+    }
+    .card-meta {
+      font-size: 0.3rem;
+      color: var(--dim);
+      line-height: 2.2;
+      margin-bottom: 16px;
+    }
+    .card-meta span { color: var(--text); }
+
+    /* ── pick-up code block ── */
+    .code-block {
+      background: var(--header-bg);
+      border: 2px dashed var(--amber);
+      padding: 12px;
+      text-align: center;
+      margin-bottom: 14px;
+    }
+    .code-label {
+      font-size: 0.3rem;
+      color: var(--dim);
+      letter-spacing: 2px;
+      margin-bottom: 8px;
+    }
+    .code-value {
+      font-size: 1.1rem;
+      color: var(--amber);
+      letter-spacing: 10px;
+    }
+
+    /* ── status badges ── */
+    .badge {
+      display: inline-block;
+      font-size: 0.35rem;
+      padding: 5px 10px;
+      letter-spacing: 2px;
+      border: 2px solid;
+      margin-top: auto;
+    }
+    .badge-pending  { color: var(--amber); border-color: var(--amber); }
+    .badge-claimed  { color: var(--mint);  border-color: var(--mint); }
+    .badge-canceled { color: var(--dim);   border-color: var(--dim); }
+
+    /* ── cancel button ── */
+    .btn-cancel {
+      font-family: 'Press Start 2P', monospace;
+      font-size: 0.38rem;
+      width: 100%;
+      padding: 10px 0;
+      background: transparent;
+      color: var(--rose);
+      border: 2px solid var(--rose);
+      cursor: pointer;
+      letter-spacing: 1px;
+      margin-top: 10px;
+      box-shadow: 3px 3px 0 #5a2a2a;
+      transition: transform 0.08s, box-shadow 0.08s;
+    }
+    .btn-cancel:hover  { background: var(--rose); color: var(--header-bg); }
+    .btn-cancel:active { transform: translate(2px,2px); box-shadow: 1px 1px 0 #5a2a2a; }
+    .btn-cancel:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+      box-shadow: none;
+    }
+
+    /* ── loading / empty states ── */
+    .state-msg {
+      font-size: 0.42rem;
+      color: var(--dim);
+      text-align: center;
+      padding: 50px 0;
+      line-height: 3;
+      grid-column: 1 / -1;
+    }
+    .state-msg.blink { animation: blink 1s step-end infinite; }
+    @keyframes blink { 50% { opacity: 0; } }
+
+    /* ── skeleton shimmer (optional polish) ── */
+    .profile-panel.loading .stat-value {
+      background: var(--border);
+      color: transparent;
+      border-radius: 2px;
+      animation: shimmer 1.2s ease infinite alternate;
+    }
+    @keyframes shimmer { from { opacity: 0.4; } to { opacity: 0.8; } }
+  </style>
+</head>
+<body>
+
+  <!-- Top bar -->
+  <div class="top-bar">
+    <a class="back-link" href="/">◀ BACK TO MARKET</a>
+    <button class="btn-logout" id="btn-logout">[ LOGOUT ]</button>
+  </div>
+
+  <div class="page">
+
+    <!-- Page title -->
+    <div class="page-title">🎓 MY DASHBOARD</div>
+    <div class="page-sub">STUDENT PROFILE &amp; ORDER HISTORY</div>
+
+    <!-- Profile panel -->
+    <div class="profile-panel loading" id="profile-panel">
+      <div class="profile-stat">
+        <div class="stat-label">STUDENT</div>
+        <div class="stat-value mint" id="p-name">—</div>
+      </div>
+      <div class="profile-stat">
+        <div class="stat-label">STUDENT NO.</div>
+        <div class="stat-value" id="p-number">—</div>
+      </div>
+      <div class="profile-stat">
+        <div class="stat-label">WALLET BALANCE</div>
+        <div class="stat-value amber" id="p-balance">—</div>
+      </div>
+      <div class="profile-stat">
+        <div class="stat-label">🌱 ECO POINTS</div>
+        <div class="stat-value coral" id="p-points">—</div>
+      </div>
+    </div>
+
+    <!-- Orders section -->
+    <div class="section-title">// ORDER HISTORY</div>
+    <div class="orders-grid" id="orders-grid">
+      <div class="state-msg blink">▓▓▓ LOADING ORDERS... ▓▓▓</div>
+    </div>
+
+  </div><!-- /.page -->
+
+<script>
+  // ── Auth guard + profile load ─────────────────────────────────────────────
+  async function init() {
+    try {
+      const res = await fetch('/api/me');
+      if (res.status === 401) { window.location.href = '/login'; return; }
+      const user = await res.json();
+      if (user.role !== 'student') { window.location.href = '/login'; return; }
+      renderProfile(user);
+    } catch {
+      window.location.href = '/login';
+      return;
+    }
+    loadOrders();
+  }
+
+  function renderProfile(user) {
+    document.getElementById('p-name').textContent    = user.name;
+    document.getElementById('p-number').textContent  = user.student_number;
+    document.getElementById('p-balance').textContent = `RM ${parseFloat(user.acc_balance).toFixed(2)}`;
+    document.getElementById('p-points').textContent  = `${user.eco_points} PTS`;
+    document.getElementById('profile-panel').classList.remove('loading');
+  }
+
+  async function refreshProfile() {
+    try {
+      const res  = await fetch('/api/me');
+      if (!res.ok) return;
+      const user = await res.json();
+      renderProfile(user);
+    } catch {}
+  }
+
+  document.getElementById('btn-logout').addEventListener('click', async () => {
+    await fetch('/api/logout', { method: 'POST' });
+    window.location.href = '/login';
+  });
+
+  // ── Helpers ───────────────────────────────────────────────────────────────
+  function formatTime(t) {
+    if (!t) return '—';
+    const parts = t.split(':');
+    let h = parseInt(parts[0], 10);
+    const m = parts[1];
+    const ampm = h >= 12 ? 'PM' : 'AM';
+    h = h % 12 || 12;
+    return `${h}:${m} ${ampm}`;
+  }
+
+  function formatDate(ts) {
+    if (!ts) return '—';
+    return new Date(ts).toLocaleDateString('en-GB', {
+      day: '2-digit', month: 'short', year: 'numeric',
+    }).toUpperCase();
+  }
+
+  // ── Build one order card ──────────────────────────────────────────────────
+  function buildCard(order) {
+    const card = document.createElement('div');
+    card.className  = 'order-card';
+    card.dataset.id = order.order_ID;
+
+    const statusLower = order.status.toLowerCase();
+
+    // Code block — only for Pending
+    const codeHTML = statusLower === 'pending' ? `
+      <div class="code-block">
+        <div class="code-label">PICK-UP CODE</div>
+        <div class="code-value">${order.pickUpCode}</div>
+      </div>` : '';
+
+    // Badge
+    let badgeHTML = '';
+    if (statusLower === 'claimed')  badgeHTML = `<span class="badge badge-claimed">✔ CLAIMED</span>`;
+    if (statusLower === 'canceled') badgeHTML = `<span class="badge badge-canceled">✘ CANCELED</span>`;
+    if (statusLower === 'pending')  badgeHTML = `<span class="badge badge-pending">● PENDING</span>`;
+
+    // Cancel button — only for Pending
+    const cancelHTML = statusLower === 'pending'
+      ? `<button class="btn-cancel" data-id="${order.order_ID}">[ CANCEL ORDER ]</button>`
+      : '';
+
+    card.innerHTML = `
+      <div class="card-order-id">ORDER #${order.order_ID} · ${formatDate(order.orderTime)}</div>
+      <div class="card-box-name">${order.box_name}</div>
+      <div class="card-store-name">${order.store_name}</div>
+      <div class="card-price">RM ${parseFloat(order.flashPrice).toFixed(2)}</div>
+      <div class="card-meta">
+        PICKUP BY: <span>${formatTime(order.pickUpDeadline)}</span>
+      </div>
+      ${codeHTML}
+      ${badgeHTML}
+      ${cancelHTML}
+    `;
+
+    // Attach cancel handler
+    const btnCancel = card.querySelector('.btn-cancel');
+    if (btnCancel) {
+      btnCancel.addEventListener('click', () => cancelOrder(order.order_ID, card, btnCancel));
+    }
+
+    return card;
+  }
+
+  // ── Load orders ───────────────────────────────────────────────────────────
+  async function loadOrders() {
+    const grid = document.getElementById('orders-grid');
+    grid.innerHTML = '<div class="state-msg blink">▓▓▓ LOADING ORDERS... ▓▓▓</div>';
+
+    try {
+      const res = await fetch('/api/student/orders');
+      if (res.status === 401) { window.location.href = '/login'; return; }
+      const orders = await res.json();
+
+      grid.innerHTML = '';
+
+      if (!orders.length) {
+        grid.innerHTML = '<div class="state-msg">NO ORDERS YET.<br>HEAD TO THE MARKET AND GRAB A BOX!</div>';
+        return;
+      }
+
+      orders.forEach(o => grid.appendChild(buildCard(o)));
+    } catch (err) {
+      grid.innerHTML = `<div class="state-msg" style="color:var(--rose)">FAILED TO LOAD ORDERS.<br>${err.message}</div>`;
+    }
+  }
+
+  // ── Cancel order ──────────────────────────────────────────────────────────
+  async function cancelOrder(orderId, card, btn) {
+    if (!confirm('Cancel this order and receive a refund?')) return;
+
+    btn.disabled    = true;
+    btn.textContent = '[ CANCELING... ]';
+
+    try {
+      const res  = await fetch(`/api/student/orders/${orderId}/cancel`, { method: 'POST' });
+      const data = await res.json();
+
+      if (res.ok) {
+        // Fade out, then replace with a fresh Canceled card
+        card.style.transition = 'opacity 0.25s';
+        card.style.opacity    = '0';
+        setTimeout(async () => {
+          // Swap to a canceled-state card in place
+          const updated = buildCard({
+            order_ID:       orderId,
+            orderTime:      card.querySelector('.card-order-id').textContent.split('·')[1]?.trim(),
+            box_name:       card.querySelector('.card-box-name').textContent,
+            store_name:     card.querySelector('.card-store-name').textContent,
+            flashPrice:     card.querySelector('.card-price').textContent.replace('RM ',''),
+            pickUpDeadline: null,
+            pickUpCode:     '',
+            status:         'Canceled',
+          });
+          card.replaceWith(updated);
+          // Refresh profile balance
+          await refreshProfile();
+          alert(`ORDER CANCELED & REFUNDED  RM ${data.refunded?.toFixed(2) ?? ''}`);
+        }, 260);
+      } else {
+        alert(`ERROR: ${data.error || 'Could not cancel order.'}`);
+        btn.disabled    = false;
+        btn.textContent = '[ CANCEL ORDER ]';
+      }
+    } catch (err) {
+      alert(`NETWORK ERROR: ${err.message}`);
+      btn.disabled    = false;
+      btn.textContent = '[ CANCEL ORDER ]';
+    }
+  }
+
+  init();
+</script>
+</body>
+</html>
