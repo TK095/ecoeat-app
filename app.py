@@ -327,21 +327,30 @@ def submit_review():
     conn = get_db()
     try:
         with conn.cursor() as cur:
-            # Verify the student owns this order and it is Claimed
+            # Step 1: verify ownership and fetch current status
             cur.execute(
-                """SELECT o.order_ID, b.store_ID
-                   FROM `Order` o
-                   JOIN Blind_Box b ON o.box_ID = b.box_ID
-                   WHERE o.order_ID = %s AND o.SID = %s AND o.status = 'Claimed'""",
+                "SELECT order_ID, status FROM `Order` WHERE order_ID = %s AND SID = %s",
                 (order_id, sid),
             )
-            order = cur.fetchone()
-            if not order:
+            order_row = cur.fetchone()
+            if not order_row:
+                return jsonify({"error": "Order not found or does not belong to you."}), 400
+
+            # Step 2: explicit status gate with the required message
+            if order_row["status"] != "Claimed":
                 return jsonify({
-                    "error": "Order not found, not yours, or not yet claimed."
+                    "error": "You can only review orders that you have successfully claimed."
                 }), 400
 
-            store_id = order["store_ID"]
+            # Step 3: fetch store_ID for the rating update
+            cur.execute(
+                """SELECT b.store_ID
+                   FROM `Order` o
+                   JOIN Blind_Box b ON o.box_ID = b.box_ID
+                   WHERE o.order_ID = %s""",
+                (order_id,),
+            )
+            store_id = cur.fetchone()["store_ID"]
 
             # Insert review (UNIQUE constraint on order_ID enforces 1-per-order)
             cur.execute(
@@ -420,6 +429,7 @@ def get_boxes():
                 FROM Blind_Box b
                 JOIN Store s ON b.store_ID = s.store_ID
                 WHERE b.stockQuantity > 0
+                  AND b.is_active = TRUE
                 ORDER BY b.box_ID
             """)
             rows = cur.fetchall()
@@ -477,7 +487,7 @@ def vendor_get_boxes():
         with conn.cursor() as cur:
             cur.execute(
                 """SELECT box_ID, name, originalPrice, flashPrice,
-                          stockQuantity, pickUpDeadline
+                          stockQuantity, pickUpDeadline, is_active
                    FROM Blind_Box
                    WHERE store_ID = %s
                    ORDER BY box_ID""",
@@ -537,6 +547,41 @@ def vendor_add_box():
         conn.close()
 
 
+# ── PUT /api/vendor/boxes/<box_id>/toggle ────────────────────────────────────
+
+@app.route("/api/vendor/boxes/<int:box_id>/toggle", methods=["PUT"])
+def vendor_toggle_box(box_id):
+    store_id, err = login_required(role="store")
+    if err:
+        return err
+
+    conn = get_db()
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                "SELECT is_active FROM Blind_Box WHERE box_ID = %s AND store_ID = %s",
+                (box_id, store_id),
+            )
+            box = cur.fetchone()
+            if not box:
+                return jsonify({"error": "Box not found or does not belong to your store."}), 404
+
+            new_status = not box["is_active"]
+            cur.execute(
+                "UPDATE Blind_Box SET is_active = %s WHERE box_ID = %s AND store_ID = %s",
+                (new_status, box_id, store_id),
+            )
+        conn.commit()
+        return jsonify({"box_ID": box_id, "is_active": new_status})
+
+    except Exception as e:
+        conn.rollback()
+        msg = e.args[1] if len(e.args) > 1 else str(e)
+        return jsonify({"error": msg}), 500
+    finally:
+        conn.close()
+
+
 # ── DELETE /api/vendor/boxes/<box_id> ────────────────────────────────────────
 
 @app.route("/api/vendor/boxes/<int:box_id>", methods=["DELETE"])
@@ -548,7 +593,7 @@ def vendor_delete_box(box_id):
     conn = get_db()
     try:
         with conn.cursor() as cur:
-            # Verify the box belongs to this store before deleting
+            # Verify ownership before modifying
             cur.execute(
                 "SELECT box_ID FROM Blind_Box WHERE box_ID = %s AND store_ID = %s",
                 (box_id, store_id),
@@ -556,16 +601,14 @@ def vendor_delete_box(box_id):
             if not cur.fetchone():
                 return jsonify({"error": "Box not found or does not belong to your store."}), 404
 
+            # Soft-delete: deactivate instead of DELETE to preserve FK integrity
             cur.execute(
-                "DELETE FROM Blind_Box WHERE box_ID = %s AND store_ID = %s",
+                "UPDATE Blind_Box SET is_active = FALSE WHERE box_ID = %s AND store_ID = %s",
                 (box_id, store_id),
             )
         conn.commit()
-        return jsonify({"message": f"Blind box {box_id} deleted."})
+        return jsonify({"message": f"Blind box {box_id} has been deactivated.", "is_active": False})
 
-    except pymysql.err.IntegrityError as e:
-        conn.rollback()
-        return jsonify({"error": "Cannot delete: this box has existing orders."}), 409
     except Exception as e:
         conn.rollback()
         msg = e.args[1] if len(e.args) > 1 else str(e)
@@ -599,6 +642,16 @@ def place_order():
                 return jsonify({"error": "Blind box not found."}), 404
 
             flash_price = box["flashPrice"]
+
+            # Insufficient-funds guard — check before any mutation
+            cur.execute(
+                "SELECT acc_balance FROM Student WHERE SID = %s", (sid,)
+            )
+            student = cur.fetchone()
+            if not student or student["acc_balance"] < flash_price:
+                return jsonify({
+                    "error": "Insufficient Funds! Please select a cheaper box."
+                }), 400
 
             cur.execute(
                 "UPDATE Student SET acc_balance = acc_balance - %s WHERE SID = %s",

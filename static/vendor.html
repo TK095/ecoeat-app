@@ -350,6 +350,51 @@
       padding: 2px 6px;
     }
     .inv-deadline { font-size: 0.3rem; color: var(--dim); }
+    .inv-hidden-badge {
+      font-size: 0.28rem;
+      color: var(--rose);
+      border: 1px solid var(--rose);
+      padding: 1px 5px;
+      letter-spacing: 1px;
+    }
+
+    /* ── inventory action buttons ── */
+    .inv-actions {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      flex-shrink: 0;
+    }
+    .btn-toggle-hide, .btn-toggle-publish {
+      font-family: 'Press Start 2P', monospace;
+      font-size: 0.28rem;
+      padding: 5px 8px;
+      background: transparent;
+      white-space: nowrap;
+      cursor: pointer;
+      box-shadow: 2px 2px 0;
+      transition: transform 0.07s, box-shadow 0.07s;
+    }
+    .btn-toggle-hide {
+      color: var(--amber);
+      border: 2px solid var(--amber) !important;
+      box-shadow: 2px 2px 0 #5a4a10;
+    }
+    .btn-toggle-hide:hover  { background: var(--amber); color: var(--header-bg); }
+    .btn-toggle-publish {
+      color: var(--mint);
+      border: 2px solid var(--mint) !important;
+      box-shadow: 2px 2px 0 #3a7a63;
+    }
+    .btn-toggle-publish:hover  { background: var(--mint); color: var(--header-bg); }
+    .btn-toggle-hide:active,
+    .btn-toggle-publish:active { transform: translate(1px,1px); box-shadow: 1px 1px 0; }
+    .btn-toggle-hide:disabled,
+    .btn-toggle-publish:disabled { opacity: 0.4; cursor: not-allowed; box-shadow: none; transform: none; }
+
+    /* dimmed card for hidden boxes */
+    .inv-item.inactive { opacity: 0.45; }
+
     #inv-loading {
       font-size: 0.38rem;
       color: var(--dim);
@@ -758,20 +803,31 @@
 
   function buildInvItem(box) {
     const li = document.createElement('li');
-    li.className  = 'inv-item';
+    li.className  = `inv-item${box.is_active ? '' : ' inactive'}`;
     li.dataset.id = box.box_ID;
-    li.innerHTML  = `
+
+    const toggleCls   = box.is_active ? 'btn-toggle-hide'    : 'btn-toggle-publish';
+    const toggleLabel = box.is_active ? '[ HIDE BOX ]'        : '[ PUBLISH ]';
+    const hiddenBadge = box.is_active ? '' : '<span class="inv-hidden-badge">HIDDEN</span>';
+
+    li.innerHTML = `
       <div class="inv-info">
         <div class="inv-name">${box.name}</div>
         <div class="inv-meta">
           <span class="inv-price">RM${parseFloat(box.flashPrice).toFixed(2)}</span>
           <span class="inv-stock">STOCK: ${box.stockQuantity}</span>
           <span class="inv-deadline">BY ${formatDeadline(box.pickUpDeadline)}</span>
+          ${hiddenBadge}
         </div>
       </div>
-      <button class="btn-rose btn-delete">[ DELETE ]</button>
+      <div class="inv-actions">
+        <button class="${toggleCls} btn-toggle">${toggleLabel}</button>
+        <button class="btn-rose btn-delete">[ DELETE ]</button>
+      </div>
     `;
+
     li.querySelector('.btn-delete').addEventListener('click', () => deleteBox(box.box_ID, li));
+    li.querySelector('.btn-toggle').addEventListener('click', () => toggleBox(box.box_ID, li));
     return li;
   }
 
@@ -797,6 +853,45 @@
     } catch {
       loading.style.display = 'none';
       list.innerHTML = '<li class="inv-empty" style="color:var(--rose)">FAILED TO LOAD INVENTORY.</li>';
+    }
+  }
+
+  async function toggleBox(boxId, liEl) {
+    const btn = liEl.querySelector('.btn-toggle');
+    btn.disabled    = true;
+    btn.textContent = '...';
+
+    try {
+      const res  = await fetch(`/api/vendor/boxes/${boxId}/toggle`, { method: 'PUT' });
+      const data = await res.json();
+
+      if (res.ok) {
+        const nowActive = data.is_active;
+        // Update button appearance
+        btn.className   = `${nowActive ? 'btn-toggle-hide' : 'btn-toggle-publish'} btn-toggle`;
+        btn.textContent = nowActive ? '[ HIDE BOX ]' : '[ PUBLISH ]';
+        // Dim / un-dim the card
+        liEl.classList.toggle('inactive', !nowActive);
+        // Update / remove the HIDDEN badge
+        const meta  = liEl.querySelector('.inv-meta');
+        const badge = meta.querySelector('.inv-hidden-badge');
+        if (!nowActive && !badge) {
+          const span = document.createElement('span');
+          span.className   = 'inv-hidden-badge';
+          span.textContent = 'HIDDEN';
+          meta.appendChild(span);
+        } else if (nowActive && badge) {
+          badge.remove();
+        }
+        showToast('inv-toast', true,
+          `Box #${boxId} ${nowActive ? 'published to market.' : 'hidden from market.'}`);
+      } else {
+        showToast('inv-toast', false, data.error || 'Toggle failed.');
+      }
+    } catch {
+      showToast('inv-toast', false, 'Network error.');
+    } finally {
+      btn.disabled = false;
     }
   }
 
