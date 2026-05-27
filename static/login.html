@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>EcoEat – Login</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://unpkg.com/nes.css@2.3.0/css/nes.min.css" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:        #2b2d42;
+      --surface:   #363858;
+      --header-bg: #1e2035;
+      --border:    #5a5e7e;
+      --mint:      #7ecfb3;
+      --coral:     #e8957a;
+      --amber:     #f0c87a;
+      --rose:      #c47878;
+      --dim:       #7a7e9e;
+      --text:      #d4d6f0;
+    }
+
+    body {
+      font-family: 'Press Start 2P', monospace;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 40px 16px;
+    }
+
+    /* ── terminal frame ── */
+    .terminal {
+      width: 100%;
+      max-width: 480px;
+      background: var(--surface);
+      border: 3px solid var(--border);
+      box-shadow: 8px 8px 0 rgba(0,0,0,0.3);
+      padding: 36px 32px 40px;
+    }
+
+    .terminal-header { text-align: center; margin-bottom: 32px; }
+    .logo {
+      font-size: clamp(1rem, 5vw, 1.5rem);
+      color: var(--mint);
+      letter-spacing: 4px;
+    }
+    .subtitle {
+      font-size: 0.42rem;
+      color: var(--coral);
+      margin-top: 10px;
+      letter-spacing: 3px;
+    }
+
+    .divider {
+      border: none;
+      border-top: 2px dashed var(--border);
+      margin: 24px 0;
+    }
+
+    /* ── role tiles ── */
+    .role-group {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 28px;
+    }
+    .role-tile {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 10px 6px;
+      border: 3px solid var(--border);
+      color: var(--dim);
+      font-size: 0.4rem;
+      letter-spacing: 1px;
+      cursor: pointer;
+      user-select: none;
+      transition: border-color 0.1s, color 0.1s;
+    }
+    .role-tile input[type="radio"] { display: none; }
+    .role-tile.active {
+      border-color: var(--mint);
+      color: var(--mint);
+      background: rgba(126,207,179,0.08);
+    }
+    .role-tile:not(.active):hover {
+      border-color: var(--border);
+      color: var(--text);
+    }
+
+    /* ── fields ── */
+    .field { margin-bottom: 20px; }
+    .field-label {
+      display: block;
+      font-size: 0.38rem;
+      color: var(--mint);
+      letter-spacing: 2px;
+      margin-bottom: 8px;
+    }
+    .field-input {
+      font-family: 'Press Start 2P', monospace;
+      font-size: 0.48rem;
+      background: var(--header-bg);
+      color: var(--text);
+      border: 3px solid var(--border);
+      width: 100%;
+      padding: 12px 14px;
+      outline: none;
+      caret-color: var(--mint);
+    }
+    .field-input:focus  { border-color: var(--mint); }
+    .field-input::placeholder { color: var(--border); font-size: 0.4rem; }
+
+    /* ── submit button ── */
+    .btn-submit {
+      font-family: 'Press Start 2P', monospace;
+      font-size: 0.52rem;
+      width: 100%;
+      padding: 14px 0;
+      background: var(--coral);
+      color: var(--header-bg);
+      border: none;
+      cursor: pointer;
+      letter-spacing: 2px;
+      box-shadow: 4px 4px 0 #7a3a28;
+      transition: transform 0.08s, box-shadow 0.08s;
+      margin-top: 8px;
+    }
+    .btn-submit:hover  { background: #edaa92; }
+    .btn-submit:active { transform: translate(2px,2px); box-shadow: 2px 2px 0 #7a3a28; }
+    .btn-submit:disabled {
+      background: var(--border);
+      color: var(--dim);
+      cursor: not-allowed;
+      box-shadow: none;
+    }
+
+    /* ── error panel ── */
+    .error-panel {
+      display: none;
+      margin-top: 20px;
+      border: 3px solid var(--rose);
+      padding: 14px 16px;
+      background: var(--header-bg);
+      font-size: 0.38rem;
+      color: var(--rose);
+      line-height: 2;
+      animation: slide-in 0.15s ease;
+    }
+    @keyframes slide-in {
+      from { opacity: 0; transform: translateY(6px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ── footer link ── */
+    .footer-link {
+      text-align: center;
+      margin-top: 24px;
+      font-size: 0.36rem;
+      color: var(--dim);
+      line-height: 2.5;
+    }
+    .footer-link a {
+      color: var(--amber);
+      text-decoration: none;
+      border-bottom: 1px solid var(--amber);
+    }
+    .footer-link a:hover { opacity: 0.75; }
+
+    @keyframes blink { 50% { opacity: 0; } }
+    .cursor-blink { animation: blink 1s step-end infinite; color: var(--mint); }
+  </style>
+</head>
+<body>
+
+  <div class="terminal">
+    <div class="terminal-header">
+      <div class="logo">🌿 ECOEAT</div>
+      <div class="subtitle">LOGIN TERMINAL</div>
+    </div>
+
+    <div style="font-size:0.38rem; color:var(--dim); margin-bottom:20px; letter-spacing:1px;">
+      C:\ECOEAT&gt; AUTH.EXE<span class="cursor-blink">█</span>
+    </div>
+    <hr class="divider" />
+
+    <!-- Role selector -->
+    <div style="font-size:0.38rem; color:var(--mint); letter-spacing:2px; margin-bottom:12px;">SELECT ROLE:</div>
+    <div class="role-group" id="role-group">
+      <label class="role-tile active" id="tile-student">
+        <input type="radio" name="role" value="student" checked />
+        🎓 STUDENT
+      </label>
+      <label class="role-tile" id="tile-store">
+        <input type="radio" name="role" value="store" />
+        🏪 VENDOR
+      </label>
+    </div>
+
+    <div class="field">
+      <label class="field-label" for="email">EMAIL:</label>
+      <input class="field-input" id="email" type="email" placeholder="user@campus.edu" autocomplete="email" />
+    </div>
+
+    <div class="field">
+      <label class="field-label" for="password">PASSWORD:</label>
+      <input class="field-input" id="password" type="password" placeholder="••••••••" autocomplete="current-password" />
+    </div>
+
+    <button class="btn-submit" id="btn-login">[ LOGIN ]</button>
+
+    <div class="error-panel" id="error-panel"></div>
+
+    <div class="footer-link">
+      NO ACCOUNT? <a href="/signup">[ REGISTER HERE ]</a>
+    </div>
+  </div>
+
+<script>
+  const tileStudent = document.getElementById('tile-student');
+  const tileStore   = document.getElementById('tile-store');
+  const btnLogin    = document.getElementById('btn-login');
+  const errorPanel  = document.getElementById('error-panel');
+
+  function setRole(role) {
+    tileStudent.classList.toggle('active', role === 'student');
+    tileStore.classList.toggle('active', role === 'store');
+    tileStudent.querySelector('input').checked = role === 'student';
+    tileStore.querySelector('input').checked   = role === 'store';
+    errorPanel.style.display = 'none';
+  }
+
+  tileStudent.addEventListener('click', () => setRole('student'));
+  tileStore.addEventListener('click',   () => setRole('store'));
+
+  function getRole() {
+    return document.querySelector('input[name="role"]:checked').value;
+  }
+
+  function showError(msg) {
+    errorPanel.textContent = `⚠ ${msg}`;
+    errorPanel.style.display = 'block';
+  }
+
+  document.getElementById('password').addEventListener('keydown', e => {
+    if (e.key === 'Enter') btnLogin.click();
+  });
+
+  btnLogin.addEventListener('click', async () => {
+    const role     = getRole();
+    const email    = document.getElementById('email').value.trim();
+    const password = document.getElementById('password').value;
+
+    if (!email || !password) {
+      showError('Email and password are required.');
+      return;
+    }
+
+    btnLogin.disabled     = true;
+    btnLogin.textContent  = '[ AUTHENTICATING... ]';
+    errorPanel.style.display = 'none';
+
+    try {
+      const res  = await fetch('/api/login', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ role, email, password }),
+      });
+      const data = await res.json();
+
+      if (res.ok) {
+        window.location.href = role === 'student' ? '/' : '/vendor';
+      } else {
+        showError(data.error || 'Login failed.');
+      }
+    } catch (err) {
+      showError('Network error. Try again.');
+    } finally {
+      btnLogin.disabled    = false;
+      btnLogin.textContent = '[ LOGIN ]';
+    }
+  });
+</script>
+</body>
+</html>

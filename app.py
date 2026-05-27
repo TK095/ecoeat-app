@@ -1,12 +1,14 @@
 import os
 import pymysql
 import pymysql.cursors
-from flask import Flask, jsonify, request, send_from_directory
+from flask import Flask, jsonify, request, send_from_directory, session
+from werkzeug.security import generate_password_hash, check_password_hash
 from dotenv import load_dotenv
 
 load_dotenv(override=True)
 
 app = Flask(__name__, static_folder="static")
+app.secret_key = "super_secret_retro_key"
 
 
 def get_db():
@@ -21,16 +23,178 @@ def get_db():
     )
 
 
-# ── Static pages ────────────────────────────────────────────────────────────
+def login_required(role=None):
+    """Returns (user_id, err_response) — err_response is None when authenticated."""
+    user_id = session.get("user_id")
+    if not user_id:
+        return None, (jsonify({"error": "Not logged in."}), 401)
+    if role and session.get("role") != role:
+        return None, (jsonify({"error": "Forbidden: wrong role."}), 403)
+    return user_id, None
+
+
+# ── Static pages ─────────────────────────────────────────────────────────────
 
 @app.route("/")
 def index():
     return send_from_directory("static", "index.html")
 
-
 @app.route("/vendor")
 def vendor():
     return send_from_directory("static", "vendor.html")
+
+@app.route("/login")
+def login_page():
+    return send_from_directory("static", "login.html")
+
+@app.route("/signup")
+def signup_page():
+    return send_from_directory("static", "signup.html")
+
+
+# ── POST /api/signup ─────────────────────────────────────────────────────────
+
+@app.route("/api/signup", methods=["POST"])
+def signup():
+    data     = request.get_json(force=True)
+    role     = data.get("role", "").lower()
+    name     = data.get("name", "").strip()
+    email    = data.get("email", "").strip()
+    password = data.get("password", "")
+    phone    = data.get("phone", "").strip()
+
+    if role not in ("student", "store"):
+        return jsonify({"error": "role must be 'student' or 'store'."}), 400
+    if not all([name, email, password, phone]):
+        return jsonify({"error": "name, email, password, and phone are required."}), 400
+
+    pw_hash = generate_password_hash(password)
+    conn = get_db()
+    try:
+        with conn.cursor() as cur:
+            if role == "student":
+                student_number = data.get("student_number", "").strip()
+                if not student_number:
+                    return jsonify({"error": "student_number is required for students."}), 400
+                cur.execute(
+                    """INSERT INTO Student
+                           (name, student_number, phone, email, password_hash, acc_balance, eco_points)
+                       VALUES (%s, %s, %s, %s, %s, 50.00, 0)""",
+                    (name, student_number, phone, email, pw_hash),
+                )
+                new_id = cur.lastrowid
+            else:
+                category = data.get("category", "").strip()
+                location = data.get("location", "").strip()
+                if not category:
+                    return jsonify({"error": "category is required for stores."}), 400
+                cur.execute(
+                    """INSERT INTO Store (name, location, category, email, password_hash)
+                       VALUES (%s, %s, %s, %s, %s)""",
+                    (name, location, category, email, pw_hash),
+                )
+                new_id = cur.lastrowid
+        conn.commit()
+        return jsonify({"message": "Account created.", "id": new_id}), 201
+
+    except pymysql.err.IntegrityError as e:
+        conn.rollback()
+        return jsonify({"error": "Email or student number already registered."}), 409
+    except Exception as e:
+        conn.rollback()
+        msg = e.args[1] if len(e.args) > 1 else str(e)
+        return jsonify({"error": msg}), 500
+    finally:
+        conn.close()
+
+
+# ── POST /api/login ──────────────────────────────────────────────────────────
+
+@app.route("/api/login", methods=["POST"])
+def login():
+    data     = request.get_json(force=True)
+    role     = data.get("role", "").lower()
+    email    = data.get("email", "").strip()
+    password = data.get("password", "")
+
+    if role not in ("student", "store"):
+        return jsonify({"error": "role must be 'student' or 'store'."}), 400
+    if not email or not password:
+        return jsonify({"error": "email and password are required."}), 400
+
+    conn = get_db()
+    try:
+        with conn.cursor() as cur:
+            if role == "student":
+                cur.execute(
+                    "SELECT SID AS id, name, email, password_hash, acc_balance, eco_points "
+                    "FROM Student WHERE email = %s",
+                    (email,),
+                )
+            else:
+                cur.execute(
+                    "SELECT store_ID AS id, name, email, password_hash, category, location, rating "
+                    "FROM Store WHERE email = %s",
+                    (email,),
+                )
+            user = cur.fetchone()
+    finally:
+        conn.close()
+
+    if not user or not check_password_hash(user["password_hash"], password):
+        return jsonify({"error": "Invalid email or password."}), 401
+
+    session.clear()
+    session["user_id"] = user["id"]
+    session["role"]    = role
+
+    profile = {k: v for k, v in user.items() if k != "password_hash"}
+    profile["role"] = role
+    return jsonify({"message": "Logged in.", "user": profile})
+
+
+# ── GET /api/me ──────────────────────────────────────────────────────────────
+
+@app.route("/api/me", methods=["GET"])
+def me():
+    user_id, err = login_required()
+    if err:
+        return err
+
+    role = session.get("role")
+    conn = get_db()
+    try:
+        with conn.cursor() as cur:
+            if role == "student":
+                cur.execute(
+                    "SELECT SID AS id, name, student_number, phone, email, acc_balance, eco_points "
+                    "FROM Student WHERE SID = %s",
+                    (user_id,),
+                )
+            else:
+                cur.execute(
+                    "SELECT store_ID AS id, name, location, category, rating, email "
+                    "FROM Store WHERE store_ID = %s",
+                    (user_id,),
+                )
+            user = cur.fetchone()
+    finally:
+        conn.close()
+
+    if not user:
+        session.clear()
+        return jsonify({"error": "User not found."}), 404
+
+    user["role"] = role
+    return jsonify(user)
+
+
+# ── POST /api/logout ─────────────────────────────────────────────────────────
+
+@app.route("/api/logout", methods=["POST"])
+def logout():
+    session.clear()
+    return jsonify({"message": "Logged out."})
 
 
 # ── GET /api/boxes ───────────────────────────────────────────────────────────
@@ -48,7 +212,7 @@ def get_boxes():
                     b.flashPrice,
                     b.stockQuantity,
                     b.pickUpDeadline,
-                    s.name AS storeName,
+                    s.name     AS storeName,
                     s.location,
                     s.category,
                     s.rating
@@ -59,7 +223,7 @@ def get_boxes():
             """)
             rows = cur.fetchall()
         for row in rows:
-            if "pickUpDeadline" in row and row["pickUpDeadline"] is not None:
+            if row.get("pickUpDeadline") is not None:
                 row["pickUpDeadline"] = str(row["pickUpDeadline"])
         return jsonify(rows)
     finally:
@@ -70,17 +234,19 @@ def get_boxes():
 
 @app.route("/api/order", methods=["POST"])
 def place_order():
-    data = request.get_json(force=True)
-    sid = data.get("SID")
+    sid, err = login_required(role="student")
+    if err:
+        return err
+
+    data   = request.get_json(force=True)
     box_id = data.get("box_ID")
 
-    if not sid or not box_id:
-        return jsonify({"error": "SID and box_ID are required."}), 400
+    if not box_id:
+        return jsonify({"error": "box_ID is required."}), 400
 
     conn = get_db()
     try:
         with conn.cursor() as cur:
-            # Fetch the flash price so we can deduct it from acc_balance
             cur.execute(
                 "SELECT flashPrice FROM Blind_Box WHERE box_ID = %s", (box_id,)
             )
@@ -90,13 +256,11 @@ def place_order():
 
             flash_price = box["flashPrice"]
 
-            # Deduct balance (CHECK constraint / trigger will guard against negatives)
             cur.execute(
                 "UPDATE Student SET acc_balance = acc_balance - %s WHERE SID = %s",
                 (flash_price, sid),
             )
 
-            # Place order via stored procedure
             cur.execute(
                 "CALL sp_place_order(%s, %s, @order_id, @pick_code)",
                 (sid, box_id),
@@ -106,7 +270,7 @@ def place_order():
 
         conn.commit()
         return jsonify({
-            "order_id": result["order_id"],
+            "order_id":   result["order_id"],
             "pickUpCode": result["pick_code"],
         }), 201
 
@@ -118,7 +282,6 @@ def place_order():
         return jsonify({"error": str(e.args[1])}), 409
     except Exception as e:
         conn.rollback()
-        # Surface MySQL SIGNAL messages (triggers, procedure errors)
         msg = e.args[1] if len(e.args) > 1 else str(e)
         return jsonify({"error": msg}), 409
     finally:
@@ -129,7 +292,7 @@ def place_order():
 
 @app.route("/api/claim", methods=["POST"])
 def claim_order():
-    data = request.get_json(force=True)
+    data         = request.get_json(force=True)
     pick_up_code = data.get("pickUpCode")
 
     if not pick_up_code:

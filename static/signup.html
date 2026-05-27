@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>EcoEat – Sign Up</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://unpkg.com/nes.css@2.3.0/css/nes.min.css" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:        #2b2d42;
+      --surface:   #363858;
+      --header-bg: #1e2035;
+      --border:    #5a5e7e;
+      --mint:      #7ecfb3;
+      --coral:     #e8957a;
+      --amber:     #f0c87a;
+      --rose:      #c47878;
+      --dim:       #7a7e9e;
+      --text:      #d4d6f0;
+    }
+
+    body {
+      font-family: 'Press Start 2P', monospace;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 40px 16px;
+    }
+
+    .terminal {
+      width: 100%;
+      max-width: 520px;
+      background: var(--surface);
+      border: 3px solid var(--border);
+      box-shadow: 8px 8px 0 rgba(0,0,0,0.3);
+      padding: 36px 32px 40px;
+    }
+
+    .terminal-header { text-align: center; margin-bottom: 28px; }
+    .logo {
+      font-size: clamp(1rem, 5vw, 1.4rem);
+      color: var(--mint);
+      letter-spacing: 4px;
+    }
+    .subtitle {
+      font-size: 0.4rem;
+      color: var(--coral);
+      margin-top: 10px;
+      letter-spacing: 3px;
+    }
+
+    .divider {
+      border: none;
+      border-top: 2px dashed var(--border);
+      margin: 20px 0;
+    }
+
+    /* ── fields ── */
+    .field { margin-bottom: 18px; }
+    .field-label {
+      display: block;
+      font-size: 0.36rem;
+      color: var(--mint);
+      letter-spacing: 2px;
+      margin-bottom: 7px;
+    }
+    .field-input, .field-select {
+      font-family: 'Press Start 2P', monospace;
+      font-size: 0.45rem;
+      background: var(--header-bg);
+      color: var(--text);
+      border: 3px solid var(--border);
+      width: 100%;
+      padding: 11px 13px;
+      outline: none;
+      caret-color: var(--mint);
+      -webkit-appearance: none;
+      appearance: none;
+    }
+    .field-input:focus, .field-select:focus { border-color: var(--mint); }
+    .field-input::placeholder { color: var(--border); font-size: 0.38rem; }
+
+    /* select arrow */
+    .select-wrap { position: relative; }
+    .select-wrap::after {
+      content: '▼';
+      position: absolute;
+      right: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 0.4rem;
+      color: var(--dim);
+      pointer-events: none;
+    }
+    .field-select option { background: var(--header-bg); }
+
+    /* dynamic extra field */
+    #extra-field { transition: opacity 0.15s; }
+
+    /* ── hint text ── */
+    .field-hint {
+      font-size: 0.3rem;
+      color: var(--dim);
+      margin-top: 5px;
+      letter-spacing: 1px;
+    }
+
+    /* ── submit button ── */
+    .btn-submit {
+      font-family: 'Press Start 2P', monospace;
+      font-size: 0.52rem;
+      width: 100%;
+      padding: 14px 0;
+      background: var(--mint);
+      color: var(--header-bg);
+      border: none;
+      cursor: pointer;
+      letter-spacing: 2px;
+      box-shadow: 4px 4px 0 #3a7a63;
+      transition: transform 0.08s, box-shadow 0.08s;
+      margin-top: 8px;
+    }
+    .btn-submit:hover  { background: #9edfc8; }
+    .btn-submit:active { transform: translate(2px,2px); box-shadow: 2px 2px 0 #3a7a63; }
+    .btn-submit:disabled {
+      background: var(--border);
+      color: var(--dim);
+      cursor: not-allowed;
+      box-shadow: none;
+    }
+
+    /* ── result panels ── */
+    .result-panel {
+      display: none;
+      margin-top: 20px;
+      border: 3px solid var(--rose);
+      padding: 14px 16px;
+      background: var(--header-bg);
+      font-size: 0.38rem;
+      line-height: 2;
+      animation: slide-in 0.15s ease;
+    }
+    .result-panel.success { border-color: var(--mint); color: var(--mint); }
+    .result-panel.error   { color: var(--rose); }
+    @keyframes slide-in {
+      from { opacity: 0; transform: translateY(6px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .footer-link {
+      text-align: center;
+      margin-top: 24px;
+      font-size: 0.36rem;
+      color: var(--dim);
+      line-height: 2.5;
+    }
+    .footer-link a {
+      color: var(--amber);
+      text-decoration: none;
+      border-bottom: 1px solid var(--amber);
+    }
+    .footer-link a:hover { opacity: 0.75; }
+
+    @keyframes blink { 50% { opacity: 0; } }
+    .cursor-blink { animation: blink 1s step-end infinite; color: var(--mint); }
+  </style>
+</head>
+<body>
+
+  <div class="terminal">
+    <div class="terminal-header">
+      <div class="logo">🌿 ECOEAT</div>
+      <div class="subtitle">NEW USER REGISTRATION</div>
+    </div>
+
+    <div style="font-size:0.36rem; color:var(--dim); margin-bottom:18px; letter-spacing:1px;">
+      C:\ECOEAT&gt; REGISTER.EXE<span class="cursor-blink">█</span>
+    </div>
+    <hr class="divider" />
+
+    <!-- Role -->
+    <div class="field">
+      <label class="field-label" for="role">ROLE:</label>
+      <div class="select-wrap">
+        <select class="field-select" id="role">
+          <option value="student">🎓 STUDENT</option>
+          <option value="store">🏪 VENDOR / STORE</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Name -->
+    <div class="field">
+      <label class="field-label" for="name">FULL NAME:</label>
+      <input class="field-input" id="name" type="text" placeholder="Aung Kyaw Zin" autocomplete="name" />
+    </div>
+
+    <!-- Email -->
+    <div class="field">
+      <label class="field-label" for="email">EMAIL:</label>
+      <input class="field-input" id="email" type="email" placeholder="user@campus.edu" autocomplete="email" />
+    </div>
+
+    <!-- Password -->
+    <div class="field">
+      <label class="field-label" for="password">PASSWORD:</label>
+      <input class="field-input" id="password" type="password" placeholder="••••••••" autocomplete="new-password" />
+      <div class="field-hint">MIN. 6 CHARACTERS RECOMMENDED</div>
+    </div>
+
+    <!-- Phone -->
+    <div class="field">
+      <label class="field-label" for="phone">PHONE:</label>
+      <input class="field-input" id="phone" type="tel" placeholder="09-XXXX-XXXXX" autocomplete="tel" />
+    </div>
+
+    <!-- Dynamic extra field: student number OR category -->
+    <div class="field" id="extra-field">
+      <label class="field-label" id="extra-label">STUDENT NUMBER:</label>
+      <input class="field-input" id="extra-input" type="text" placeholder="CS2021001" />
+    </div>
+
+    <button class="btn-submit" id="btn-register">[ CREATE ACCOUNT ]</button>
+
+    <div class="result-panel" id="result-panel"></div>
+
+    <div class="footer-link">
+      ALREADY REGISTERED? <a href="/login">[ LOGIN HERE ]</a>
+    </div>
+  </div>
+
+<script>
+  const roleSelect  = document.getElementById('role');
+  const extraLabel  = document.getElementById('extra-label');
+  const extraInput  = document.getElementById('extra-input');
+  const btnRegister = document.getElementById('btn-register');
+  const resultPanel = document.getElementById('result-panel');
+
+  const EXTRA_CONFIG = {
+    student: { label: 'STUDENT NUMBER:', placeholder: 'CS2021001' },
+    store:   { label: 'STORE CATEGORY:', placeholder: 'e.g. Bakery, Chinese, Cafe' },
+  };
+
+  roleSelect.addEventListener('change', () => {
+    const cfg = EXTRA_CONFIG[roleSelect.value];
+    extraLabel.textContent       = cfg.label;
+    extraInput.placeholder       = cfg.placeholder;
+    extraInput.value             = '';
+    resultPanel.style.display    = 'none';
+  });
+
+  function showResult(success, msg) {
+    resultPanel.className       = `result-panel ${success ? 'success' : 'error'}`;
+    resultPanel.textContent     = `${success ? '✔' : '⚠'} ${msg}`;
+    resultPanel.style.display   = 'block';
+  }
+
+  btnRegister.addEventListener('click', async () => {
+    const role     = roleSelect.value;
+    const name     = document.getElementById('name').value.trim();
+    const email    = document.getElementById('email').value.trim();
+    const password = document.getElementById('password').value;
+    const phone    = document.getElementById('phone').value.trim();
+    const extra    = extraInput.value.trim();
+
+    if (!name || !email || !password || !phone || !extra) {
+      showResult(false, 'All fields are required.');
+      return;
+    }
+    if (password.length < 4) {
+      showResult(false, 'Password is too short.');
+      return;
+    }
+
+    const body = { role, name, email, password, phone };
+    if (role === 'student') {
+      body.student_number = extra;
+    } else {
+      body.category = extra;
+      body.location = '';
+    }
+
+    btnRegister.disabled    = true;
+    btnRegister.textContent = '[ REGISTERING... ]';
+    resultPanel.style.display = 'none';
+
+    try {
+      const res  = await fetch('/api/signup', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify(body),
+      });
+      const data = await res.json();
+
+      if (res.ok) {
+        showResult(true, 'Account created! Redirecting to login...');
+        setTimeout(() => { window.location.href = '/login'; }, 1500);
+      } else {
+        showResult(false, data.error || 'Registration failed.');
+      }
+    } catch (err) {
+      showResult(false, 'Network error. Try again.');
+    } finally {
+      btnRegister.disabled    = false;
+      btnRegister.textContent = '[ CREATE ACCOUNT ]';
+    }
+  });
+</script>
+</body>
+</html>
